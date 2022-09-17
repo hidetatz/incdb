@@ -7,15 +7,55 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 3 {
-		fmt.Fprintf(os.Stderr, "key/value required\n")
+	if len(os.Args) != 2 && len(os.Args) != 4 {
+		fmt.Fprintf(os.Stderr, "invalid parameter\n")
 		os.Exit(1)
 	}
 
-	if err := save(os.Args[1], os.Args[2]); err != nil {
-		fmt.Fprintf(os.Stderr, "save data %s: %s\n", os.Args[1], err)
+	switch os.Args[1] {
+	case "r":
+		out, err := read()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "read data: %s\n", err)
+			os.Exit(1)
+		}
+		fmt.Println(out)
+	case "w":
+		if err := save(os.Args[2], os.Args[3]); err != nil {
+			fmt.Fprintf(os.Stderr, "save data %s: %s\n", os.Args[2], err)
+			os.Exit(1)
+		}
+	default:
+		fmt.Fprintf(os.Stderr, "invalid subcommand\n")
 		os.Exit(1)
 	}
+
+}
+
+func read() (string, error) {
+	f, err := os.OpenFile("data/incdb.data", os.O_RDONLY|os.O_CREATE, 0755)
+	if err != nil {
+		return "", fmt.Errorf("open tablespace file: %w", err)
+	}
+	defer f.Close()
+
+	d := make(map[string]string)
+
+	info, err := f.Stat()
+	if err != nil {
+		return "", fmt.Errorf("stat tablespace file: %w", err)
+	}
+
+	// Do the JSON decode in case the file is not empty. It will be empty only on the incdb first time run.
+	if info.Size() == 0 {
+		return "empty", nil
+	}
+
+	if err := json.NewDecoder(f).Decode(&d); err != nil {
+		return "", fmt.Errorf("decode tablespace file as JSON: %w", err)
+	}
+
+	return fmt.Sprintf("%+v", d), nil
 }
 
 func save(key, value string) error {
