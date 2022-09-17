@@ -6,7 +6,6 @@ Steps:
 * Can save multiple data into tablespace file
 * Can see all the data in tablespace file in raw format (JSON)
 * Can see all the data in tablespace file in neat format
-* Can run as client-server system
 * Can filer data by key (equality match)
 * Can limit the data
 * Can specify the data offset
