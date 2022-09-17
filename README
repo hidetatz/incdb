@@ -1,0 +1,20 @@
+incdb - incrementally developed database system
+
+Steps:
+
+* Can save a data into tablespace file
+* Can save multiple data into tablespace file
+* Can see all the data in tablespace file in raw format (JSON)
+* Can see all the data in tablespace file in neat format
+* Can run as client-server system
+* Can filer data by key (equality match)
+* Can limit the data
+* Can specify the data offset
+* Can specify the data order (Ascending/Descending)
+* Can read simple SQL
+* Can create multiple table
+* Can specify schema (with only simple types)
+* Can store data on buffer cache
+* Can read data from buffer cache if exists
+* Can do checkpoint
+* Can do MVCC transaction
