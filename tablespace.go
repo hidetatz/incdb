@@ -6,8 +6,16 @@ import (
 	"os"
 )
 
+var datafile = "data/incdb.data"
+
+func init() {
+	if os.Getenv("INCDB_TEST") == "1" {
+		datafile = "data/test.incdb.data"
+	}
+}
+
 func readAll() ([]map[string]string, error) {
-	f, err := os.OpenFile("data/incdb.data", os.O_RDONLY|os.O_CREATE, 0755)
+	f, err := os.OpenFile(datafile, os.O_RDONLY|os.O_CREATE, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("open tablespace file: %w", err)
 	}
@@ -34,7 +42,7 @@ func readAll() ([]map[string]string, error) {
 
 func save(key, value string) error {
 	// Open tablespace file to read. The data format is JSON {key: value}
-	f, err := os.OpenFile("data/incdb.data", os.O_RDWR|os.O_CREATE, 0755)
+	f, err := os.OpenFile(datafile, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return fmt.Errorf("open tablespace file: %w", err)
 	}

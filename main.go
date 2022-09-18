@@ -52,9 +52,11 @@ func main() {
 			return
 		}
 
+		b := []map[string]string{}
 		for i := 0; i < stmt.Select.Limit.Count; i++ {
-			fmt.Println(out[i])
+			b = append(b, out[i])
 		}
+		fmt.Println(b)
 
 	case stmt.Insert != nil:
 		if err := save(stmt.Insert.Key, stmt.Insert.Val); err != nil {
