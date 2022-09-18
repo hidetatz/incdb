@@ -1,5 +1,7 @@
 package main
 
+import "strings"
+
 type Token struct {
 	Type TkType
 	Next *Token
@@ -12,6 +14,7 @@ const (
 	TkRead TkType = iota + 1
 	TkWrite
 	TkStr
+	TkLimit
 	TkEOF
 )
 
@@ -53,8 +56,15 @@ func tokenize(query string) *Token {
 			s += string(query[i])
 			i++
 		}
-		cur.Next = &Token{Type: TkStr, Val: s}
-		cur = cur.Next
+
+		switch strings.ToLower(s) {
+		case "limit":
+			cur.Next = &Token{Type: TkLimit}
+			cur = cur.Next
+		default:
+			cur.Next = &Token{Type: TkStr, Val: s}
+			cur = cur.Next
+		}
 	}
 
 	cur.Next = &Token{Type: TkEOF}

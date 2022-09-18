@@ -6,35 +6,7 @@ import (
 	"os"
 )
 
-func read(key string) (string, error) {
-	d, err := decode()
-	if err != nil {
-		return "", fmt.Errorf("decode file: %w", err)
-	}
-
-	for _, r := range d {
-		v, ok := r[key]
-		if !ok {
-			continue
-		}
-
-		return fmt.Sprintf("%s", v), nil
-	}
-
-	return "not found", nil
-
-}
-
-func readAll() (string, error) {
-	d, err := decode()
-	if err != nil {
-		return "", fmt.Errorf("decode file: %w", err)
-	}
-
-	return fmt.Sprintf("%+v", d), nil
-}
-
-func decode() ([]map[string]string, error) {
+func readAll() ([]map[string]string, error) {
 	f, err := os.OpenFile("data/incdb.data", os.O_RDONLY|os.O_CREATE, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("open tablespace file: %w", err)

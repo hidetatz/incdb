@@ -9,8 +9,13 @@ type Where struct {
 	Equal *Binary
 }
 
+type Limit struct {
+	Count int
+}
+
 type Select struct {
 	Where *Where
+	Limit *Limit
 }
 
 type Insert struct {

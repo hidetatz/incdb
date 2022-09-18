@@ -13,6 +13,10 @@ go build -o incdb *.go
 ./incdb r
 ./incdb w 3 d
 ./incdb r
+./incdb r limit
+./incdb r limit abc
+./incdb r limit 1
+./incdb r limit 10
 ./incdb r 4
 ./incdb r 1
 ./incdb r abc

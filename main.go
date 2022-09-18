@@ -21,12 +21,23 @@ func main() {
 	switch {
 	case stmt.Select != nil:
 		if stmt.Select.Where != nil {
-			out, err := read(stmt.Select.Where.Equal.Value)
+			out, err := readAll()
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "read data: %s\n", err)
 				os.Exit(1)
 			}
-			fmt.Println(out)
+
+			for _, m := range out {
+				v, ok := m[stmt.Select.Where.Equal.Value]
+				if !ok {
+					continue
+				}
+
+				fmt.Println(v)
+				return
+			}
+
+			fmt.Println("not found")
 			return
 		}
 
@@ -35,7 +46,15 @@ func main() {
 			fmt.Fprintf(os.Stderr, "read all the data: %s\n", err)
 			os.Exit(1)
 		}
-		fmt.Println(out)
+
+		if stmt.Select.Limit == nil || stmt.Select.Limit.Count > len(out) {
+			fmt.Println(out)
+			return
+		}
+
+		for i := 0; i < stmt.Select.Limit.Count; i++ {
+			fmt.Println(out[i])
+		}
 
 	case stmt.Insert != nil:
 		if err := save(stmt.Insert.Key, stmt.Insert.Val); err != nil {
