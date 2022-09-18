@@ -47,6 +47,7 @@ func main() {
 			os.Exit(1)
 		}
 
+		// in case offset is specified, cut the out slice from offset to the last
 		if stmt.Select.Offset != nil {
 			if stmt.Select.Offset.Count > len(out) {
 				stmt.Select.Offset.Count = len(out)
