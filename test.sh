@@ -12,3 +12,5 @@ go build -o incdb *.go
 ./incdb r
 ./incdb w 3 d
 ./incdb r
+./incdb r 4
+./incdb r 1

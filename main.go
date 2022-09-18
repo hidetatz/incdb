@@ -20,9 +20,19 @@ func main() {
 
 	switch {
 	case stmt.Select != nil:
-		out, err := read()
+		if stmt.Select.Where != nil {
+			out, err := read(stmt.Select.Where.Equal.Value)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "read data: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Println(out)
+			return
+		}
+
+		out, err := readAll()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "read data: %s\n", err)
+			fmt.Fprintf(os.Stderr, "read all the data: %s\n", err)
 			os.Exit(1)
 		}
 		fmt.Println(out)
