@@ -12,12 +12,17 @@ func read(key string) (string, error) {
 		return "", fmt.Errorf("decode file: %w", err)
 	}
 
-	v, ok := d[key]
-	if !ok {
-		return "not found", nil
+	for _, r := range d {
+		v, ok := r[key]
+		if !ok {
+			continue
+		}
+
+		return fmt.Sprintf("%s", v), nil
 	}
 
-	return fmt.Sprintf("%s", v), nil
+	return "not found", nil
+
 }
 
 func readAll() (string, error) {
@@ -29,14 +34,14 @@ func readAll() (string, error) {
 	return fmt.Sprintf("%+v", d), nil
 }
 
-func decode() (map[string]string, error) {
+func decode() ([]map[string]string, error) {
 	f, err := os.OpenFile("data/incdb.data", os.O_RDONLY|os.O_CREATE, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("open tablespace file: %w", err)
 	}
 	defer f.Close()
 
-	d := make(map[string]string)
+	d := []map[string]string{}
 
 	info, err := f.Stat()
 	if err != nil {
@@ -63,7 +68,7 @@ func save(key, value string) error {
 	}
 	defer f.Close()
 
-	d := make(map[string]string)
+	d := []map[string]string{}
 
 	info, err := f.Stat()
 	if err != nil {
@@ -78,7 +83,7 @@ func save(key, value string) error {
 	}
 
 	// key is ok to be replaced if duplicate.
-	d[key] = value
+	d = append(d, map[string]string{key: value})
 
 	// Drop the file content before write. Seek(0, 0) is needed to modify the IO offset.
 	if err := f.Truncate(0); err != nil {

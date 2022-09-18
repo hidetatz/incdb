@@ -7,6 +7,7 @@ go build -o incdb *.go
 ./incdb r
 ./incdb w 1 a
 ./incdb w 2 b
+./incdb w abc def
 ./incdb r
 ./incdb w 1 c
 ./incdb r
@@ -14,3 +15,4 @@ go build -o incdb *.go
 ./incdb r
 ./incdb r 4
 ./incdb r 1
+./incdb r abc
