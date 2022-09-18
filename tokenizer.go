@@ -15,6 +15,7 @@ const (
 	TkWrite
 	TkStr
 	TkLimit
+	TkOffset
 	TkEOF
 )
 
@@ -60,6 +61,9 @@ func tokenize(query string) *Token {
 		switch strings.ToLower(s) {
 		case "limit":
 			cur.Next = &Token{Type: TkLimit}
+			cur = cur.Next
+		case "offset":
+			cur.Next = &Token{Type: TkOffset}
 			cur = cur.Next
 		default:
 			cur.Next = &Token{Type: TkStr, Val: s}

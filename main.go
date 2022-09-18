@@ -47,6 +47,14 @@ func main() {
 			os.Exit(1)
 		}
 
+		if stmt.Select.Offset != nil {
+			if stmt.Select.Offset.Count > len(out) {
+				stmt.Select.Offset.Count = len(out)
+			}
+
+			out = out[stmt.Select.Offset.Count:]
+		}
+
 		if stmt.Select.Limit == nil || stmt.Select.Limit.Count > len(out) {
 			fmt.Println(out)
 			return

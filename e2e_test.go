@@ -14,6 +14,7 @@ func TestE2E(t *testing.T) {
 		expectedOut  string
 		expectedData string
 	}{
+		{input: "r", expectedOut: ""},
 		{input: "w", expectedOut: "gramatically invalid: parse statement: not a string", wantErr: true},
 		{input: "w 1 a", expectedData: `[{"1":"a"}]`},
 		{input: "w 2 b", expectedData: `[{"1":"a"},{"2":"b"}]`},
@@ -25,6 +26,13 @@ func TestE2E(t *testing.T) {
 		{input: "r limit 100", expectedOut: `[map[1:a] map[2:b] map[3:c]]`},
 		{input: "r limit", expectedOut: "gramatically invalid: parse statement: not a string", wantErr: true},
 		{input: "r limit a", expectedOut: "gramatically invalid: parse statement: cannot convert to int", wantErr: true},
+		{input: "r offset 1", expectedOut: `[map[2:b] map[3:c]]`},
+		{input: "r offset 3", expectedOut: ""},
+		{input: "r offset", expectedOut: "gramatically invalid: parse statement: not a string", wantErr: true},
+		{input: "r offset abc", expectedOut: "gramatically invalid: parse statement: cannot convert to int", wantErr: true},
+		{input: "r limit 1 offset 1", expectedOut: "[map[2:b]]"},
+		{input: "r limit 5 offset 1", expectedOut: "[map[2:b] map[3:c]]"},
+		{input: "r offset 1 limit 5", expectedOut: "[map[2:b] map[3:c]]"},
 	}
 
 	// prepare test

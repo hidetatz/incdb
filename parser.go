@@ -31,7 +31,7 @@ func parse(query string) (queryStmt *QueryStmt, err error) {
 	return nil, fmt.Errorf("unknown token type: %v", tk.Type)
 }
 
-// "r" str? ("limit" num)?
+// "r" str? ("limit" num ("offset" num)?)?
 func parseRead() *QueryStmt {
 	q := &QueryStmt{Select: &Select{}}
 
@@ -44,12 +44,35 @@ func parseRead() *QueryStmt {
 		q.Select.Where = &Where{Equal: &Binary{Value: s}}
 	}
 
+	// limit and offset order does not matter (postgres compatible)
 	if consume(TkLimit) {
 		lim := expectNum()
 		if lim < 0 {
 			panic("limit must not be negative")
 		}
 		q.Select.Limit = &Limit{Count: lim}
+
+		if consume(TkOffset) {
+			ofs := expectNum()
+			if ofs < 0 {
+				panic("offset must not be negative")
+			}
+			q.Select.Offset = &Offset{Count: ofs}
+		}
+	} else if consume(TkOffset) {
+		ofs := expectNum()
+		if ofs < 0 {
+			panic("offset must not be negative")
+		}
+		q.Select.Offset = &Offset{Count: ofs}
+
+		if consume(TkLimit) {
+			lim := expectNum()
+			if lim < 0 {
+				panic("limit must not be negative")
+			}
+			q.Select.Limit = &Limit{Count: lim}
+		}
 	}
 
 	return q

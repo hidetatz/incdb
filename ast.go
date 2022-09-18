@@ -13,9 +13,14 @@ type Limit struct {
 	Count int
 }
 
+type Offset struct {
+	Count int
+}
+
 type Select struct {
-	Where *Where
-	Limit *Limit
+	Where  *Where
+	Limit  *Limit
+	Offset *Offset
 }
 
 type Insert struct {
