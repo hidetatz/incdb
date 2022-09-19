@@ -67,7 +67,7 @@ func TestE2E(t *testing.T) {
 
 		if tc.expectedOut != "" {
 			if tc.expectedOut+"\n" != string(out) {
-				t.Fatalf("out: expected: '%s', got: '%s'", tc.expectedOut, string(out))
+				t.Fatalf("out: expected: '%s', got: '%s' (input: %s)", tc.expectedOut, string(out), tc.input)
 			}
 		}
 
@@ -78,7 +78,7 @@ func TestE2E(t *testing.T) {
 			}
 
 			if tc.expectedData+"\n" != string(d) {
-				t.Fatalf("data: expected: '%s', got: '%s'", tc.expectedData, string(d))
+				t.Fatalf("data: expected: '%s', got: '%s' (input: %s)", tc.expectedData, string(d), tc.input)
 			}
 		}
 
