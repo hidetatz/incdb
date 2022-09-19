@@ -6,7 +6,7 @@ import (
 )
 
 // tk is a global token which is "currently" focused on.
-// For better parser readability this is globally declared.
+// This is globally declared for better parser readability.
 var tk *Token
 
 func parse(query string) (queryStmt *QueryStmt, err error) {
@@ -31,9 +31,7 @@ func parse(query string) (queryStmt *QueryStmt, err error) {
 	return nil, fmt.Errorf("unknown token type: %v", tk.Type)
 }
 
-// read         = "r" str? order_clause? limit_clause?
-// order_clause = ("order" "by" str)
-// limit_clause = ("limit" num | "offset" num | "limit" num "offset" num | "offset" num "limit" num)
+// read = "r" str? order_clause? limit_clause?
 func parseRead() *QueryStmt {
 	q := &QueryStmt{Select: &Select{}}
 
@@ -46,11 +44,32 @@ func parseRead() *QueryStmt {
 		q.Select.Where = &Where{Equal: &Binary{Value: s}}
 	}
 
+	q.Select.Order = parseOrderClause()
 	q.Select.Limit, q.Select.Offset = parseLimitOffsetClause()
 
 	return q
 }
 
+// order_clause = ("order" "by" ("asc" | "desc"))
+func parseOrderClause() *Order {
+	if !consume(TkOrder) {
+		return nil
+	}
+
+	if !consume(TkBy) {
+		panic("'by' must follow 'order'")
+	}
+
+	if consume(TkAsc) {
+		return &Order{Dir: "asc"}
+	} else if consume(TkDesc) {
+		return &Order{Dir: "desc"}
+	}
+
+	panic("invalid direction specified after 'order by'")
+}
+
+// limit_clause = ("limit" num | "offset" num | "limit" num "offset" num | "offset" num "limit" num)
 func parseLimitOffsetClause() (*Limit, *Offset) {
 	// limit and offset order does not matter (postgres compatible)
 

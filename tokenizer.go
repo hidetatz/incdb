@@ -13,9 +13,17 @@ type TkType int
 const (
 	TkRead TkType = iota + 1
 	TkWrite
+
 	TkStr
+
 	TkLimit
 	TkOffset
+
+	TkOrder
+	TkBy
+	TkAsc
+	TkDesc
+
 	TkEOF
 )
 
@@ -61,14 +69,21 @@ func tokenize(query string) *Token {
 		switch strings.ToLower(s) {
 		case "limit":
 			cur.Next = &Token{Type: TkLimit}
-			cur = cur.Next
 		case "offset":
 			cur.Next = &Token{Type: TkOffset}
-			cur = cur.Next
+		case "order":
+			cur.Next = &Token{Type: TkOrder}
+		case "by":
+			cur.Next = &Token{Type: TkBy}
+		case "asc":
+			cur.Next = &Token{Type: TkAsc}
+		case "desc":
+			cur.Next = &Token{Type: TkDesc}
 		default:
 			cur.Next = &Token{Type: TkStr, Val: s}
-			cur = cur.Next
 		}
+
+		cur = cur.Next
 	}
 
 	cur.Next = &Token{Type: TkEOF}

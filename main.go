@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -45,6 +46,37 @@ func main() {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "read all the data: %s\n", err)
 			os.Exit(1)
+		}
+
+		if stmt.Select.Order != nil {
+
+			if stmt.Select.Order.Dir == "asc" {
+				sort.Slice(out, func(i, j int) bool {
+					var ik string
+					for k := range out[i] {
+						ik = k
+					}
+
+					var jk string
+					for k := range out[j] {
+						jk = k
+					}
+					return ik < jk
+				})
+			} else {
+				sort.Slice(out, func(i, j int) bool {
+					var ik string
+					for k := range out[i] {
+						ik = k
+					}
+
+					var jk string
+					for k := range out[j] {
+						jk = k
+					}
+					return jk < ik
+				})
+			}
 		}
 
 		// in case offset is specified, cut the out slice from offset to the last

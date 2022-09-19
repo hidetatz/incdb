@@ -33,6 +33,10 @@ func TestE2E(t *testing.T) {
 		{input: "r limit 1 offset 1", expectedOut: "[map[2:b]]"},
 		{input: "r limit 5 offset 1", expectedOut: "[map[2:b] map[3:c]]"},
 		{input: "r offset 1 limit 5", expectedOut: "[map[2:b] map[3:c]]"},
+		{input: "r order by asc", expectedOut: "[map[1:a] map[2:b] map[3:c]]"},
+		{input: "r order by desc", expectedOut: "[map[3:c] map[2:b] map[1:a]]"},
+		{input: "r order by desc limit 1", expectedOut: "[map[3:c]]"},
+		{input: "r order by desc limit 1 offset 2", expectedOut: "[map[1:a]]"},
 	}
 
 	// prepare test

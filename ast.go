@@ -1,5 +1,14 @@
 package main
 
+type QueryStmt struct {
+	Select *Select
+	Insert *Insert
+}
+
+/*
+ * Select
+ */
+
 // This should have "Left" field when table schema is supported
 type Binary struct {
 	Value string
@@ -7,6 +16,10 @@ type Binary struct {
 
 type Where struct {
 	Equal *Binary
+}
+
+type Order struct {
+	Dir string // asc/desc
 }
 
 type Limit struct {
@@ -19,16 +32,15 @@ type Offset struct {
 
 type Select struct {
 	Where  *Where
+	Order  *Order
 	Limit  *Limit
 	Offset *Offset
 }
 
+/*
+ * Insert
+ */
 type Insert struct {
 	Key string
 	Val string
-}
-
-type QueryStmt struct {
-	Select *Select
-	Insert *Insert
 }
