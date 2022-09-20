@@ -49,7 +49,6 @@ func main() {
 		}
 
 		if stmt.Select.Order != nil {
-
 			if stmt.Select.Order.Dir == "asc" {
 				sort.Slice(out, func(i, j int) bool {
 					var ik string
