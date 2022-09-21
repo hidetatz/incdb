@@ -1,7 +1,7 @@
 #!/bin/bash
 
-rm ./incdb
-rm ./data/incdb.data
+rm -f ./incdb
+rm -f ./data/incdb.data
 go build -o incdb *.go
 
 ./incdb r
