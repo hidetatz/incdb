@@ -14,7 +14,10 @@ const (
 	TkRead TkType = iota + 1
 	TkWrite
 
-	TkStr
+	TkCreate
+	TkTable
+
+	TkStr // arbitrary string
 
 	TkLimit
 	TkOffset
@@ -23,6 +26,12 @@ const (
 	TkBy
 	TkAsc
 	TkDesc
+
+	TkComma
+	TkLParen // (
+	TkRParen // )
+
+	TkString // "string" (data type)
 
 	TkEOF
 )
@@ -42,20 +51,6 @@ func tokenize(query string) *Token {
 			continue
 		}
 
-		if query[i] == 'r' {
-			cur.Next = &Token{Type: TkRead}
-			cur = cur.Next
-			i++
-			continue
-		}
-
-		if query[i] == 'w' {
-			cur.Next = &Token{Type: TkWrite}
-			cur = cur.Next
-			i++
-			continue
-		}
-
 		// arbitrary string
 		s := ""
 		for i < len(query) {
@@ -67,6 +62,10 @@ func tokenize(query string) *Token {
 		}
 
 		switch strings.ToLower(s) {
+		case "r":
+			cur.Next = &Token{Type: TkRead}
+		case "w":
+			cur.Next = &Token{Type: TkWrite}
 		case "limit":
 			cur.Next = &Token{Type: TkLimit}
 		case "offset":
