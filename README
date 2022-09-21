@@ -12,8 +12,16 @@ Steps:
 * Can specify the data order (Ascending/Descending)
 * Can read simple SQL
 * Can create multiple table
+* Can create catalog
 * Can specify schema (with only simple types)
 * Can store data on buffer cache
 * Can read data from buffer cache if exists
+* Can write WAL
+* Can recover data from WAL on launch
 * Can do checkpoint
+* Can do join
+* Can use subquery
+* Can support more types on schema
 * Can do MVCC transaction
+* Can create single column index
+* Can use single column index
