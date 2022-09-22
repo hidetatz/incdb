@@ -59,7 +59,6 @@ func readAll(tbl string) ([]map[string]string, error) {
 }
 
 func save(tbl, key, value string) error {
-	// Open tablespace file to read. The data format is JSON {key: value}
 	f, err := os.OpenFile(datafile, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return fmt.Errorf("open tablespace file: %w", err)
@@ -107,7 +106,6 @@ func save(tbl, key, value string) error {
 }
 
 func createTable(tbl string) error {
-	// Open tablespace file to read. The data format is JSON {key: value}
 	f, err := os.OpenFile(datafile, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return fmt.Errorf("open tablespace file: %w", err)
