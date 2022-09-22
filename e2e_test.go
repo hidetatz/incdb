@@ -75,8 +75,8 @@ func TestE2E(t *testing.T) {
 		}
 
 		if tc.expectedOut != "" {
-			if tc.expectedOut+"\n" != string(out) {
-				t.Fatalf("out: expected: '%s', got: '%s' (input: %s)", tc.expectedOut, string(out), tc.input)
+			if o := strings.TrimSuffix(string(out), "\n"); tc.expectedOut != o {
+				t.Fatalf("out: expected: '%s', got: '%s' (input: %s)", tc.expectedOut, o, tc.input)
 			}
 		}
 
@@ -86,8 +86,8 @@ func TestE2E(t *testing.T) {
 				t.Fatalf("read test data file: %v", err)
 			}
 
-			if tc.expectedData+"\n" != string(d) {
-				t.Fatalf("data: expected: '%s', got: '%s' (input: %s)", tc.expectedData, string(d), tc.input)
+			if dt := strings.TrimSuffix(string(d), "\n"); tc.expectedData != dt {
+				t.Fatalf("data: expected: '%s', got: '%s' (input: %s)", tc.expectedData, dt, tc.input)
 			}
 		}
 
