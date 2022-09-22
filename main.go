@@ -19,8 +19,16 @@ func main() {
 	}
 
 	if stmt.Insert != nil {
-		if err := save(stmt.Insert.Key, stmt.Insert.Val); err != nil {
+		if err := save(stmt.Insert.Table, stmt.Insert.Key, stmt.Insert.Val); err != nil {
 			fmt.Fprintf(os.Stderr, "save data %s: %s\n", stmt.Insert.Key, err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	if stmt.Create != nil {
+		if err := createTable(stmt.Create.Table.Name); err != nil {
+			fmt.Fprintf(os.Stderr, "create table %s: %s\n", stmt.Create.Table.Name, err)
 			os.Exit(1)
 		}
 		return
@@ -30,7 +38,11 @@ func main() {
 
 	var result []*Tuple
 	for _, ops := range pln.Ops {
-		result, _ = ops(result)
+		result, err = ops(result)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "read data: %s\n", err)
+			os.Exit(1)
+		}
 	}
 
 	ret := []map[string]string{}

@@ -3,6 +3,7 @@ package main
 type QueryStmt struct {
 	Select *Select
 	Insert *Insert
+	Create *Create
 }
 
 /*
@@ -31,6 +32,7 @@ type Offset struct {
 }
 
 type Select struct {
+	Table  string
 	Where  *Where
 	Order  *Order
 	Limit  *Limit
@@ -41,6 +43,18 @@ type Select struct {
  * Insert
  */
 type Insert struct {
-	Key string
-	Val string
+	Table string
+	Key   string
+	Val   string
+}
+
+/*
+ * Create
+ */
+type Create struct {
+	Table *Table
+}
+
+type Table struct {
+	Name string
 }

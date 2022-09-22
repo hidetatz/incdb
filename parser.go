@@ -28,16 +28,27 @@ func parse(query string) (queryStmt *QueryStmt, err error) {
 		return parseWrite(), nil
 	}
 
+	if consume(TkCreate) {
+		return parseCreate(), nil
+	}
+
 	return nil, fmt.Errorf("unknown token type: %v", tk.Type)
 }
 
-// read = "r" str? order_clause? limit_clause?
+// read = "r" str str? order_clause? limit_clause?
 func parseRead() *QueryStmt {
 	q := &QueryStmt{Select: &Select{}}
 
 	if consume(TkEOF) {
 		return q
 	}
+
+	tbl, ok := consumeStr()
+	if !ok {
+		panic("table name is required")
+	}
+
+	q.Select.Table = tbl
 
 	s, ok := consumeStr()
 	if ok {
@@ -115,11 +126,22 @@ func parseLimitOffsetClause() (*Limit, *Offset) {
 	return nil, nil
 }
 
-// "w" str str
+// "w" str str str
 func parseWrite() *QueryStmt {
+	tbl := mustStr()
 	key := mustStr()
 	val := mustStr()
-	return &QueryStmt{Insert: &Insert{Key: key, Val: val}}
+	return &QueryStmt{Insert: &Insert{Table: tbl, Key: key, Val: val}}
+}
+
+// "create" "table" str
+func parseCreate() *QueryStmt {
+	if !consume(TkTable) {
+		panic("'table' must follow 'create'")
+	}
+
+	tbl := mustStr()
+	return &QueryStmt{Create: &Create{Table: &Table{Name: tbl}}}
 }
 
 func consume(typ TkType) bool {

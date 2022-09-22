@@ -27,10 +27,6 @@ const (
 	TkAsc
 	TkDesc
 
-	TkComma
-	TkLParen // (
-	TkRParen // )
-
 	TkString // "string" (data type)
 
 	TkEOF
@@ -78,6 +74,10 @@ func tokenize(query string) *Token {
 			cur.Next = &Token{Type: TkAsc}
 		case "desc":
 			cur.Next = &Token{Type: TkDesc}
+		case "create":
+			cur.Next = &Token{Type: TkCreate}
+		case "table":
+			cur.Next = &Token{Type: TkTable}
 		default:
 			cur.Next = &Token{Type: TkStr, Val: s}
 		}
