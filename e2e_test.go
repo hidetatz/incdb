@@ -50,26 +50,16 @@ func TestE2E(t *testing.T) {
 		os.Unsetenv("INCDB_TEST")
 	})
 
-	o, err := exec.Command("rm", "-f", "./incdb_test").CombinedOutput()
-	if err != nil {
-		t.Fatalf("rm bin: %v", string(o))
-	}
-
-	o, err = exec.Command("rm", "-f", "./data/test.incdb.data").CombinedOutput()
+	o, err := exec.Command("rm", "-f", "./data/test.incdb.data").CombinedOutput()
 	if err != nil {
 		t.Fatalf("rm data: %v", string(o))
-	}
-
-	o, err = exec.Command("go", "build", "-o", "incdb_test", ".").CombinedOutput()
-	if err != nil {
-		t.Fatalf("build bin: %v", string(o))
 	}
 
 	// do check. Not like an ordinary table driven test, each test runs sequentially on the same tablespace file.
 	for _, tc := range tests {
 		c := strings.Split(tc.input, " ")
 
-		out, err := exec.Command("./incdb_test", c[0:]...).CombinedOutput()
+		out, err := exec.Command("./incdb", c[0:]...).CombinedOutput()
 		if tc.wantErr != (err != nil) {
 			t.Fatalf("running command '%v' fail: %v", tc.input, err)
 		}
