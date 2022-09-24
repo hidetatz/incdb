@@ -20,10 +20,6 @@ func main() {
 
 	//Debug(stmt)
 
-	execute(stmt)
-}
-
-func execute(stmt *QueryStmt) {
 	if stmt.Create != nil {
 		if err := addTable(stmt.Create.Table, stmt.Create.Cols, stmt.Create.Types); err != nil {
 			fmt.Fprintf(os.Stderr, "add table %s in catalog: %s\n", stmt.Create.Table, err)
