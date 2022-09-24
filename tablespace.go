@@ -50,7 +50,7 @@ func init() {
 	}
 }
 
-func readData(tbl string) ([]map[string]string, error) {
+func readData(tbl string) ([]*Record, error) {
 	f, err := os.OpenFile(datafile, os.O_RDONLY|os.O_CREATE, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("open tablespace file: %w", err)
@@ -68,10 +68,30 @@ func readData(tbl string) ([]map[string]string, error) {
 		return nil, fmt.Errorf("table '%s' not found", tbl)
 	}
 
-	return t, nil
+	tDef, err := readCatalog(tbl)
+	if err != nil {
+		return nil, fmt.Errorf("read table '%s' definition from catalog: %w", tbl, err)
+	}
+
+	records := make([]*Record, len(t))
+	for i := range t {
+		r := &Record{
+			Cols:  make([]string, len(tDef.Cols)),
+			Types: make([]string, len(tDef.Cols)),
+			Vals:  make([]string, len(tDef.Cols)),
+		}
+		for j := range tDef.Cols {
+			r.Cols[j] = tDef.Cols[j].Name
+			r.Types[j] = tDef.Cols[j].Type
+			r.Vals[j] = t[i][tDef.Cols[j].Name]
+		}
+		records[i] = r
+	}
+
+	return records, nil
 }
 
-func save(tbl, key, value string) error {
+func save(tbl string, cols, vals []string) error {
 	f, err := os.OpenFile(datafile, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return fmt.Errorf("open tablespace file: %w", err)
@@ -88,7 +108,46 @@ func save(tbl, key, value string) error {
 		return fmt.Errorf("table '%s' not found", tbl)
 	}
 
-	d[tbl] = append(d[tbl], map[string]string{key: value})
+	tDef, err := readCatalog(tbl)
+	if err != nil {
+		return fmt.Errorf("read catalog: %w", err)
+	}
+
+	r := map[string]string{}
+
+	if len(cols) != 0 {
+		// in case at least one column is specified, data will be saved on the given columns
+		for i := range cols {
+			givenCol := cols[i]
+			found := false
+			for j := range tDef.Cols {
+				colDef := tDef.Cols[j]
+				// fill specified column value
+				if colDef.Name == givenCol {
+					r[colDef.Name] = vals[i]
+					found = true
+					break
+				}
+			}
+
+			// Column not found in table definition
+			// This means the column name is incorrect
+			if !found {
+				return fmt.Errorf("column '%s' is not found in table '%s'", givenCol, tbl)
+			}
+		}
+	} else {
+		// if column is not specified, all the data must be given
+		if len(vals) != len(tDef.Cols) {
+			return fmt.Errorf("%d values must be passed according to the table definition", len(tDef.Cols))
+		}
+
+		for i := range tDef.Cols {
+			r[tDef.Cols[i].Name] = vals[i]
+		}
+	}
+
+	d[tbl] = append(d[tbl], r)
 
 	if err := updateJsonFile(f, &d); err != nil {
 		return fmt.Errorf("update tablespace file: %w", err)
@@ -108,7 +167,7 @@ func createTable(tbl string) error {
 	d := map[string][]map[string]string{}
 
 	if err := readJsonFile(f, &d); err != nil {
-		return fmt.Errorf("read file: %w", err)
+		return fmt.Errorf("read tablespace file: %w", err)
 	}
 
 	if _, ok := d[tbl]; ok {

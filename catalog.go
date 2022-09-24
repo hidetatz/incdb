@@ -32,7 +32,7 @@ var catfile = "data/incdb.catalog"
 func init() {
 	// test mode
 	if os.Getenv("INCDB_TEST") == "1" {
-		datafile = "data/test.incdb.catalog"
+		catfile = "data/test.incdb.catalog"
 	}
 
 	// initialize file if empty
@@ -73,16 +73,65 @@ type Catalog struct {
 	Tables []*CtTable
 }
 
-func readCatalog(tbl string) (*CtTable, error) {
-	f, err := os.OpenFile(datafile, os.O_RDONLY|os.O_CREATE, 0755)
+func addTable(tbl string, cols []string, types []string) error {
+	if len(cols) != len(types) {
+		return fmt.Errorf("the length of cols and types must be the same")
+	}
+
+	if len(cols) == 0 {
+		return fmt.Errorf("table must have at least one column")
+	}
+
+	f, err := os.OpenFile(catfile, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
-		return nil, fmt.Errorf("open tablespace file: %w", err)
+		return fmt.Errorf("open catalog file: %w", err)
 	}
 	defer f.Close()
 
-	c := &Catalog{}
+	c := Catalog{}
 
-	if err := readJsonFile(f, c); err != nil {
+	if err := readJsonFile(f, &c); err != nil {
+		return fmt.Errorf("read catalog file: %w", err)
+	}
+
+	for _, t := range c.Tables {
+		if t.Name == tbl {
+			return fmt.Errorf("table %s already exists in catalog", tbl)
+		}
+	}
+
+	cs := make([]*CtCol, len(cols))
+	for i := range cols {
+		if types[i] != "string" {
+			return fmt.Errorf("type must be 'string' but '%s'", types[i])
+		}
+		cs[i] = &CtCol{Name: cols[i], Type: types[i]}
+	}
+
+	c.Tables = append(c.Tables, &CtTable{
+		Name: tbl,
+		Cols: cs,
+	})
+
+	if err := updateJsonFile(f, &c); err != nil {
+		return fmt.Errorf("update catalog file: %w", err)
+	}
+
+	f.Sync()
+
+	return nil
+}
+
+func readCatalog(tbl string) (*CtTable, error) {
+	f, err := os.OpenFile(catfile, os.O_RDONLY|os.O_CREATE, 0755)
+	if err != nil {
+		return nil, fmt.Errorf("open catalog file: %w", err)
+	}
+	defer f.Close()
+
+	c := Catalog{}
+
+	if err := readJsonFile(f, &c); err != nil {
 		return nil, fmt.Errorf("read catalog file: %w", err)
 	}
 

@@ -44,17 +44,15 @@ type Select struct {
  */
 type Insert struct {
 	Table string
-	Key   string
-	Val   string
+	Cols  []string
+	Vals  []string
 }
 
 /*
  * Create
  */
 type Create struct {
-	Table *Table
-}
-
-type Table struct {
-	Name string
+	Table string
+	Cols  []string
+	Types []string
 }

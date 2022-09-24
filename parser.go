@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 )
 
 // tk is a global token which is "currently" focused on.
@@ -20,80 +19,80 @@ func parse(query string) (queryStmt *QueryStmt, err error) {
 
 	tk = tokenize(query)
 
-	if consume(TkRead) {
+	if _, ok := consume(TkRead); ok {
 		return parseRead(), nil
 	}
 
-	if consume(TkWrite) {
-		return parseWrite(), nil
+	if _, ok := consume(TkInsert); ok {
+		return parseInsert(), nil
 	}
 
-	if consume(TkCreate) {
+	if _, ok := consume(TkCreate); ok {
 		return parseCreate(), nil
 	}
 
 	return nil, fmt.Errorf("unknown token type: %v", tk.Type)
 }
 
-// read = "r" str str? order_clause? limit_clause?
+// read = "r" table_name where_clause order_clause limit_clause
 func parseRead() *QueryStmt {
 	q := &QueryStmt{Select: &Select{}}
 
-	if consume(TkEOF) {
-		return q
-	}
-
-	tbl, ok := consumeStr()
-	if !ok {
-		panic("table name is required")
-	}
-
-	q.Select.Table = tbl
-
-	s, ok := consumeStr()
-	if ok {
-		q.Select.Where = &Where{Equal: &Binary{Value: s}}
-	}
-
+	q.Select.Table = parseTableNameClause()
+	q.Select.Where = parseWhereClause()
 	q.Select.Order = parseOrderClause()
 	q.Select.Limit, q.Select.Offset = parseLimitOffsetClause()
 
 	return q
 }
 
-// order_clause = ("order" "by" ("asc" | "desc"))
+// table_name = symbol
+func parseTableNameClause() string {
+	return mustConsume(TkSymbol)
+}
+
+// where_clause = str?
+func parseWhereClause() *Where {
+	if s, ok := consume(TkStr); ok {
+		return &Where{Equal: &Binary{s}}
+	}
+
+	return nil
+}
+
+// order_clause = ("order" "by" ("asc" | "desc"))?
 func parseOrderClause() *Order {
-	if !consume(TkOrder) {
+	if _, ok := consume(TkOrder); !ok {
 		return nil
 	}
 
-	if !consume(TkBy) {
+	if _, ok := consume(TkBy); !ok {
 		panic("'by' must follow 'order'")
 	}
 
-	if consume(TkAsc) {
+	if _, ok := consume(TkAsc); ok {
 		return &Order{Dir: "asc"}
-	} else if consume(TkDesc) {
+	} else if _, ok := consume(TkDesc); ok {
 		return &Order{Dir: "desc"}
 	}
 
 	panic("invalid direction specified after 'order by'")
 }
 
-// limit_clause = ("limit" num | "offset" num | "limit" num "offset" num | "offset" num "limit" num)
+// limit_clause = ("limit" num | "offset" num | "limit" num "offset" num | "offset" num "limit" num)?
 func parseLimitOffsetClause() (*Limit, *Offset) {
 	// limit and offset order does not matter (postgres compatible)
 
 	// Limit comes first
-	if consume(TkLimit) {
-		lim := expectNum()
+	if _, ok := consume(TkLimit); ok {
+		lim := mustConsumeInt()
 		if lim < 0 {
 			panic("limit must not be negative")
 		}
 		l := &Limit{Count: lim}
 
-		if consume(TkOffset) {
-			ofs := expectNum()
+		if _, ok := consume(TkOffset); ok {
+			ofs := mustConsumeInt()
 			if ofs < 0 {
 				panic("offset must not be negative")
 			}
@@ -105,15 +104,15 @@ func parseLimitOffsetClause() (*Limit, *Offset) {
 	}
 
 	// Offset comes first
-	if consume(TkOffset) {
-		ofs := expectNum()
+	if _, ok := consume(TkOffset); ok {
+		ofs := mustConsumeInt()
 		if ofs < 0 {
 			panic("offset must not be negative")
 		}
 		o := &Offset{Count: ofs}
 
-		if consume(TkLimit) {
-			lim := expectNum()
+		if _, ok := consume(TkLimit); ok {
+			lim := mustConsumeInt()
 			if lim < 0 {
 				panic("limit must not be negative")
 			}
@@ -126,35 +125,110 @@ func parseLimitOffsetClause() (*Limit, *Offset) {
 	return nil, nil
 }
 
-// "w" str str str
-func parseWrite() *QueryStmt {
-	tbl := mustStr()
-	key := mustStr()
-	val := mustStr()
-	return &QueryStmt{Insert: &Insert{Table: tbl, Key: key, Val: val}}
+// "insert" "into" table_name_clause cols? "values" values
+func parseInsert() *QueryStmt {
+	q := &QueryStmt{Insert: &Insert{}}
+	mustConsume(TkInto)
+
+	q.Insert.Table = parseTableNameClause()
+
+	q.Insert.Cols = parseCols()
+
+	mustConsume(TkValues)
+
+	q.Insert.Vals = parseValues()
+
+	return q
 }
 
-// "create" "table" str
+// cols = "(" col1 "," col2 "," ... ")"
+func parseCols() []string {
+	i := 1
+	ret := []string{}
+
+	if _, ok := consume(TkLParen); !ok {
+		return ret // cols is optional
+	}
+
+	for {
+		if i > 100 {
+			panic("cols must be less than 100")
+		}
+
+		s := mustConsume(TkSymbol)
+		ret = append(ret, s)
+
+		if _, ok := consume(TkRParen); ok {
+			break
+		}
+
+		mustConsume(TkComma)
+		i++
+	}
+
+	return ret
+}
+
+// values = "(" '"' val1 '"' "," '"' val2 '"' "," ... ")"
+func parseValues() []string {
+	i := 1
+	ret := []string{}
+
+	mustConsume(TkLParen)
+	for {
+		if i > 100 {
+			panic("cols must be less than 100")
+		}
+
+		s := mustConsume(TkStr)
+		ret = append(ret, s)
+
+		if _, ok := consume(TkRParen); ok {
+			break
+		}
+
+		mustConsume(TkComma)
+		i++
+	}
+
+	return ret
+}
+
+// "create" "table" table_name_clause "(" column1 "string" "," column2 "string" "," ... ")"
 func parseCreate() *QueryStmt {
-	if !consume(TkTable) {
-		panic("'table' must follow 'create'")
+	q := &QueryStmt{Create: &Create{}}
+
+	mustConsume(TkTable)
+
+	q.Create.Table = parseTableNameClause()
+
+	mustConsume(TkLParen)
+
+	i := 1
+	for {
+		if i > 100 {
+			panic("a table can contain 100 columns at most")
+		}
+
+		s := mustConsume(TkSymbol)
+		q.Create.Cols = append(q.Create.Cols, s)
+
+		mustConsume(TkString)
+		q.Create.Types = append(q.Create.Types, "string")
+
+		if _, ok := consume(TkRParen); ok {
+			break
+		}
+
+		mustConsume(TkComma)
+		i++
 	}
 
-	tbl := mustStr()
-	return &QueryStmt{Create: &Create{Table: &Table{Name: tbl}}}
+	return q
 }
 
-func consume(typ TkType) bool {
-	if tk.Type == typ {
-		tk = tk.Next
-		return true
-	}
-
-	return false
-}
-
-func consumeStr() (string, bool) {
-	if tk.Type != TkStr {
+func consume(typ TkType) (string, bool) {
+	if tk.Type != typ {
 		return "", false
 	}
 
@@ -163,25 +237,17 @@ func consumeStr() (string, bool) {
 	return s, true
 }
 
-func mustStr() string {
-	s, ok := consumeStr()
+func mustConsume(typ TkType) string {
+	s, ok := consume(typ)
 	if !ok {
-		panic("not a string")
+		panic(fmt.Sprintf("%s is expected but got %s", string(typ), string(tk.Type)))
 	}
 
 	return s
 }
 
-func expectNum() int {
-	s, ok := consumeStr()
-	if !ok {
-		panic("not a string")
-	}
-
-	n, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		panic("cannot convert to int")
-	}
-
-	return int(n)
+func mustConsumeInt() int {
+	i := tk.IVal
+	mustConsume(TkInt)
+	return i
 }

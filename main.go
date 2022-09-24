@@ -7,8 +7,8 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Fprintf(os.Stderr, "at least one argument is required\n")
+	if len(os.Args) != 2 {
+		fmt.Fprintf(os.Stderr, "single query must be passed\n")
 		os.Exit(1)
 	}
 
@@ -18,17 +18,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	if stmt.Insert != nil {
-		if err := save(stmt.Insert.Table, stmt.Insert.Key, stmt.Insert.Val); err != nil {
-			fmt.Fprintf(os.Stderr, "save data %s: %s\n", stmt.Insert.Key, err)
+	//Debug(stmt)
+
+	execute(stmt)
+}
+
+func execute(stmt *QueryStmt) {
+	if stmt.Create != nil {
+		if err := addTable(stmt.Create.Table, stmt.Create.Cols, stmt.Create.Types); err != nil {
+			fmt.Fprintf(os.Stderr, "add table %s in catalog: %s\n", stmt.Create.Table, err)
+			os.Exit(1)
+		}
+
+		if err := createTable(stmt.Create.Table); err != nil {
+			fmt.Fprintf(os.Stderr, "create table %s: %s\n", stmt.Create.Table, err)
 			os.Exit(1)
 		}
 		return
 	}
 
-	if stmt.Create != nil {
-		if err := createTable(stmt.Create.Table.Name); err != nil {
-			fmt.Fprintf(os.Stderr, "create table %s: %s\n", stmt.Create.Table.Name, err)
+	if stmt.Insert != nil {
+		if err := save(stmt.Insert.Table, stmt.Insert.Cols, stmt.Insert.Vals); err != nil {
+			fmt.Fprintf(os.Stderr, "save data into %s: %s\n", stmt.Insert.Table, err)
 			os.Exit(1)
 		}
 		return
@@ -36,19 +47,20 @@ func main() {
 
 	pln := plan(stmt)
 
-	var result []*Tuple
+	var result []*Record
 	for _, ops := range pln.Ops {
-		result, err = ops(result)
+		r, err := ops(result)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "read data: %s\n", err)
+			fmt.Fprintf(os.Stderr, "compute result: %s\n", err)
 			os.Exit(1)
 		}
+
+		result = r
 	}
 
-	ret := []map[string]string{}
-	for _, t := range result {
-		ret = append(ret, t.tp)
+	for _, r := range result {
+		fmt.Printf("%v", r.Vals)
 	}
 
-	fmt.Println(ret)
+	fmt.Println()
 }

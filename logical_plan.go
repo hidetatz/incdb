@@ -7,18 +7,13 @@ import (
 func plan(stmt *QueryStmt) *QueryPlan {
 	whr, odr, lim, ofs := stmt.Select.Where, stmt.Select.Order, stmt.Select.Limit, stmt.Select.Offset
 	ops := []Operation{
-		func(tpls []*Tuple) ([]*Tuple, error) {
-			dat, err := readData(stmt.Select.Table)
+		func(rs []*Record) ([]*Record, error) {
+			rs, err := readData(stmt.Select.Table)
 			if err != nil {
 				return nil, err
 			}
 
-			r := []*Tuple{}
-			for _, d := range dat {
-				r = append(r, &Tuple{tp: d})
-			}
-
-			return r, nil
+			return rs, nil
 		},
 	}
 
@@ -44,78 +39,53 @@ type QueryPlan struct {
 	Ops []Operation
 }
 
-type Tuple struct {
-	tp map[string]string
-}
-
 // Operation represents a relational algebra operator.
-type Operation func(tpls []*Tuple) ([]*Tuple, error)
+type Operation func(rs []*Record) ([]*Record, error)
 
-func OpWhere(key string) func(tpls []*Tuple) ([]*Tuple, error) {
-	return func(tpls []*Tuple) ([]*Tuple, error) {
-		for _, tpl := range tpls {
-			if _, ok := tpl.tp[key]; ok {
-				return []*Tuple{tpl}, nil
+func OpWhere(key string) func(rs []*Record) ([]*Record, error) {
+	return func(rs []*Record) ([]*Record, error) {
+		for _, r := range rs {
+			if r.Find(key) {
+				return []*Record{r}, nil
 			}
 		}
-		return []*Tuple{}, nil
+
+		return []*Record{}, nil
 	}
 }
 
-func OpOrder(dir string) func(tpls []*Tuple) ([]*Tuple, error) {
-	return func(tpls []*Tuple) ([]*Tuple, error) {
-		if dir == "asc" {
-			sort.Slice(tpls, func(i, j int) bool {
-				var ik string
-				for k := range tpls[i].tp {
-					ik = k
-				}
-
-				var jk string
-				for k := range tpls[j].tp {
-					jk = k
-				}
-				return ik < jk
-			})
-
-			return tpls, nil
-		}
-		sort.Slice(tpls, func(i, j int) bool {
-			var ik string
-			for k := range tpls[i].tp {
-				ik = k
+func OpOrder(dir string) func(rs []*Record) ([]*Record, error) {
+	return func(rs []*Record) ([]*Record, error) {
+		sort.Slice(rs, func(i, j int) bool {
+			if dir == "asc" {
+				return rs[i].Key() < rs[j].Key()
 			}
-
-			var jk string
-			for k := range tpls[j].tp {
-				jk = k
-			}
-			return jk < ik
+			return rs[j].Key() < rs[i].Key()
 		})
-
-		return tpls, nil
+		return rs, nil
 	}
+
 }
 
-func OpLimitOffset(limit, offset int) func(tpls []*Tuple) ([]*Tuple, error) {
-	return func(tpls []*Tuple) ([]*Tuple, error) {
+func OpLimitOffset(limit, offset int) func(rs []*Record) ([]*Record, error) {
+	return func(rs []*Record) ([]*Record, error) {
 		if limit < 0 {
-			limit = len(tpls) // in case limit is negative, it means limit is not specified.
+			limit = len(rs) // in case limit is negative, it means limit is not specified.
 		}
 
 		if limit == 0 {
-			return tpls[:0], nil
+			return rs[:0], nil
 		}
 
-		if offset > len(tpls) {
-			return tpls[:0], nil
+		if offset > len(rs) {
+			return rs[:0], nil
 		}
 
 		end := offset + limit
-		if end > len(tpls) {
-			end = len(tpls)
+		if end > len(rs) {
+			end = len(rs)
 		}
 
-		return tpls[offset:end], nil
+		return rs[offset:end], nil
 	}
 }
