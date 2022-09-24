@@ -6,6 +6,9 @@ incdb: $(SRCS)
 test: incdb
 	go test ./...
 
+testv: incdb
+	go test -v ./...
+
 clean:
 	rm -f incdb data/incdb.data data/incdb.catalog
 
