@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 )
@@ -35,7 +36,7 @@ func run(query string) error {
 			return fmt.Errorf("execute insert statement: %w", err)
 		}
 	case stmt.Select != nil:
-		if err := execSelect(stmt.Select); err != nil {
+		if err := execSelect(stmt.Select, os.Stdout); err != nil {
 			return fmt.Errorf("execute select statement: %w", err)
 		}
 	}
@@ -63,7 +64,7 @@ func execInsert(i *Insert) error {
 	return nil
 }
 
-func execSelect(s *Select) error {
+func execSelect(s *Select, w io.Writer) error {
 	pln := planSelect(s)
 
 	var result []*Record
@@ -77,10 +78,10 @@ func execSelect(s *Select) error {
 	}
 
 	for _, r := range result {
-		fmt.Printf("%v", r.Vals)
+		fmt.Fprintf(w, "%v", r.Vals)
 	}
 
-	fmt.Println()
+	fmt.Fprintf(w, "\n")
 
 	return nil
 }
