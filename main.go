@@ -12,43 +12,65 @@ func main() {
 		os.Exit(1)
 	}
 
-	stmt, err := parse(strings.Join(os.Args[1:], " "))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "gramatically invalid: %s\n", err)
+	query := strings.Join(os.Args[1:], " ")
+	if err := run(query); err != nil {
+		fmt.Fprintf(os.Stderr, "run query: %s\n", err)
 		os.Exit(1)
 	}
+}
 
-	//Debug(stmt)
-
-	if stmt.Create != nil {
-		if err := addTable(stmt.Create.Table, stmt.Create.Cols, stmt.Create.Types); err != nil {
-			fmt.Fprintf(os.Stderr, "add table %s in catalog: %s\n", stmt.Create.Table, err)
-			os.Exit(1)
-		}
-
-		if err := createTable(stmt.Create.Table); err != nil {
-			fmt.Fprintf(os.Stderr, "create table %s: %s\n", stmt.Create.Table, err)
-			os.Exit(1)
-		}
-		return
+func run(query string) error {
+	stmt, err := parse(query)
+	if err != nil {
+		return fmt.Errorf("gramatically invalid: %w", err)
 	}
 
-	if stmt.Insert != nil {
-		if err := save(stmt.Insert.Table, stmt.Insert.Cols, stmt.Insert.Vals); err != nil {
-			fmt.Fprintf(os.Stderr, "save data into %s: %s\n", stmt.Insert.Table, err)
-			os.Exit(1)
+	switch {
+	case stmt.Create != nil:
+		if err := execCreate(stmt.Create); err != nil {
+			return fmt.Errorf("execute create statement: %w", err)
 		}
-		return
+	case stmt.Insert != nil:
+		if err := execInsert(stmt.Insert); err != nil {
+			return fmt.Errorf("execute insert statement: %w", err)
+		}
+	case stmt.Select != nil:
+		if err := execSelect(stmt.Select); err != nil {
+			return fmt.Errorf("execute select statement: %w", err)
+		}
 	}
 
-	pln := plan(stmt)
+	return nil
+}
+
+func execCreate(c *Create) error {
+	if err := addTable(c.Table, c.Cols, c.Types); err != nil {
+		return fmt.Errorf("add table %s in catalog: %w", c.Table, err)
+	}
+
+	if err := createTable(c.Table); err != nil {
+		return fmt.Errorf("create table %s: %w", c.Table, err)
+	}
+
+	return nil
+}
+
+func execInsert(i *Insert) error {
+	if err := save(i.Table, i.Cols, i.Vals); err != nil {
+		return fmt.Errorf("save data into %s: %w", i.Table, err)
+	}
+
+	return nil
+}
+
+func execSelect(s *Select) error {
+	pln := planSelect(s)
 
 	var result []*Record
 	for _, ops := range pln.Ops {
 		r, err := ops(result)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "compute result: %s\n", err)
-			os.Exit(1)
+			return fmt.Errorf("compute select result: %w", err)
 		}
 
 		result = r
@@ -59,4 +81,6 @@ func main() {
 	}
 
 	fmt.Println()
+
+	return nil
 }

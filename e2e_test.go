@@ -14,9 +14,9 @@ func TestE2E(t *testing.T) {
 		expectedOut  string
 		expectedData string
 	}{
-		{input: "r test", expectedOut: "compute result: table 'test' not found", wantErr: true},
+		{input: "r test", expectedOut: "run query: execute select statement: compute select result: table 'test' not found", wantErr: true},
 		{input: "create table test (key string, value string)", expectedData: `{"test":[]}`},
-		{input: "insert into test", expectedOut: "gramatically invalid: parse statement: values is expected but got EOF", wantErr: true},
+		{input: "insert into test", expectedOut: "run query: gramatically invalid: parse statement: values is expected but got EOF", wantErr: true},
 		{input: `insert into test (key, value) values ("1", "a")`, expectedData: `{"test":[{"key":"1","value":"a"}]}`},
 		{input: `insert into test (key, value) values ("2", "b")`, expectedData: `{"test":[{"key":"1","value":"a"},{"key":"2","value":"b"}]}`},
 		{input: `insert into test (key, value) values ("3", "c")`, expectedData: `{"test":[{"key":"1","value":"a"},{"key":"2","value":"b"},{"key":"3","value":"c"}]}`},
@@ -25,12 +25,12 @@ func TestE2E(t *testing.T) {
 		{input: "r test '99'", expectedOut: ``},
 		{input: "r test limit 2", expectedOut: `[1 a][2 b]`},
 		{input: "r test limit 100", expectedOut: `[1 a][2 b][3 c]`},
-		{input: "r test limit", expectedOut: "gramatically invalid: parse statement: integer value is expected but got EOF", wantErr: true},
-		{input: "r test limit a", expectedOut: "gramatically invalid: parse statement: integer value is expected but got symbol", wantErr: true},
+		{input: "r test limit", expectedOut: "run query: gramatically invalid: parse statement: integer value is expected but got EOF", wantErr: true},
+		{input: "r test limit a", expectedOut: "run query: gramatically invalid: parse statement: integer value is expected but got symbol", wantErr: true},
 		{input: "r test offset 1", expectedOut: `[2 b][3 c]`},
 		{input: "r test offset 3", expectedOut: ""},
-		{input: "r test offset", expectedOut: "gramatically invalid: parse statement: integer value is expected but got EOF", wantErr: true},
-		{input: "r test offset abc", expectedOut: "gramatically invalid: parse statement: integer value is expected but got symbol", wantErr: true},
+		{input: "r test offset", expectedOut: "run query: gramatically invalid: parse statement: integer value is expected but got EOF", wantErr: true},
+		{input: "r test offset abc", expectedOut: "run query: gramatically invalid: parse statement: integer value is expected but got symbol", wantErr: true},
 		{input: "r test limit 1 offset 1", expectedOut: "[2 b]"},
 		{input: "r test limit 5 offset 1", expectedOut: "[2 b][3 c]"},
 		{input: "r test offset 1 limit 5", expectedOut: "[2 b][3 c]"},

@@ -4,11 +4,11 @@ import (
 	"sort"
 )
 
-func plan(stmt *QueryStmt) *QueryPlan {
-	whr, odr, lim, ofs := stmt.Select.Where, stmt.Select.Order, stmt.Select.Limit, stmt.Select.Offset
+func planSelect(slct *Select) *QueryPlan {
+	whr, odr, lim, ofs := slct.Where, slct.Order, slct.Limit, slct.Offset
 	ops := []Operation{
 		func(rs []*Record) ([]*Record, error) {
-			rs, err := readData(stmt.Select.Table)
+			rs, err := readData(slct.Table)
 			if err != nil {
 				return nil, err
 			}
