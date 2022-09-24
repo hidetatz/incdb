@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strings"
 )
@@ -31,14 +30,25 @@ func run(query string) error {
 		if err := execCreate(stmt.Create); err != nil {
 			return fmt.Errorf("execute create statement: %w", err)
 		}
+
+		fmt.Fprintf(os.Stdout, "table %s created", stmt.Create.Table)
 	case stmt.Insert != nil:
 		if err := execInsert(stmt.Insert); err != nil {
 			return fmt.Errorf("execute insert statement: %w", err)
 		}
+
+		fmt.Fprintf(os.Stdout, "inserted")
 	case stmt.Select != nil:
-		if err := execSelect(stmt.Select, os.Stdout); err != nil {
+		results, err := execSelect(stmt.Select)
+		if err != nil {
 			return fmt.Errorf("execute select statement: %w", err)
 		}
+
+		for _, r := range results {
+			fmt.Fprintf(os.Stdout, "%v", r.Vals)
+		}
+
+		fmt.Fprintf(os.Stdout, "\n")
 	}
 
 	return nil
@@ -64,24 +74,18 @@ func execInsert(i *Insert) error {
 	return nil
 }
 
-func execSelect(s *Select, w io.Writer) error {
+func execSelect(s *Select) ([]*Record, error) {
 	pln := planSelect(s)
 
 	var result []*Record
 	for _, ops := range pln.Ops {
 		r, err := ops(result)
 		if err != nil {
-			return fmt.Errorf("compute select result: %w", err)
+			return nil, fmt.Errorf("compute select result: %w", err)
 		}
 
 		result = r
 	}
 
-	for _, r := range result {
-		fmt.Fprintf(w, "%v", r.Vals)
-	}
-
-	fmt.Fprintf(w, "\n")
-
-	return nil
+	return result, nil
 }
