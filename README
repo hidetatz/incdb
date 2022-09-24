@@ -10,10 +10,11 @@ Steps:
 * Can limit the data
 * Can specify the data offset
 * Can specify the data order (Ascending/Descending)
-* Can read simple SQL
 * Can create multiple table
-* Can create catalog
 * Can specify schema (with only simple types)
+* Can create catalog
+* Can read simple SQL
+* Can run as server
 * Can store data on buffer cache
 * Can read data from buffer cache if exists
 * Can write WAL
