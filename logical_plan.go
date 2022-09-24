@@ -8,7 +8,7 @@ func plan(stmt *QueryStmt) *QueryPlan {
 	whr, odr, lim, ofs := stmt.Select.Where, stmt.Select.Order, stmt.Select.Limit, stmt.Select.Offset
 	ops := []Operation{
 		func(tpls []*Tuple) ([]*Tuple, error) {
-			dat, err := readAll(stmt.Select.Table)
+			dat, err := readData(stmt.Select.Table)
 			if err != nil {
 				return nil, err
 			}

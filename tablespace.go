@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 )
@@ -9,25 +8,49 @@ import (
 // schema
 // {
 //   "tbl1": [
-//     {"key1": "val1"},
-//     {"key2": "val2"},
-//     {"key3": "val3"}
+//     {"col1": "val1", "col2": "val2", "col3": "val3"},
+//     {"col1": "val4", "col2": "val5", "col3": "val6"},
+//     {"col1": "val1", "col2": "val9", "col3": "val9"},
 //   ],
 //   "tbl2": [
-//     {"key1": "val1"},
-//     {"key2": "val2"},
-//     {"key3": "val3"}
+//     {"col4": "val1", "col5": "val2", "col6": "val3"},
+//     {"col4": "val4", "col5": "val5", "col6": "val6"},
+//     {"col4": "val1", "col5": "val9", "col6": "val9"},
 //   ]
 // }
 var datafile = "data/incdb.data"
 
 func init() {
+	// test mode
 	if os.Getenv("INCDB_TEST") == "1" {
 		datafile = "data/test.incdb.data"
 	}
+
+	// initialize file if empty
+	f, err := os.OpenFile(datafile, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "could not read data file for initialization: %s\n", err)
+		os.Exit(1)
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "could not read data file stat for initialization: %s\n", err)
+		os.Exit(1)
+	}
+
+	if info.Size() != 0 {
+		return
+	}
+
+	if _, err := f.Write([]byte("{}")); err != nil {
+		fmt.Fprintf(os.Stderr, "could not initialize empty data file: %s\n", err)
+		os.Exit(1)
+	}
 }
 
-func readAll(tbl string) ([]map[string]string, error) {
+func readData(tbl string) ([]map[string]string, error) {
 	f, err := os.OpenFile(datafile, os.O_RDONLY|os.O_CREATE, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("open tablespace file: %w", err)
@@ -36,18 +59,8 @@ func readAll(tbl string) ([]map[string]string, error) {
 
 	d := map[string][]map[string]string{}
 
-	info, err := f.Stat()
-	if err != nil {
-		return nil, fmt.Errorf("stat tablespace file: %w", err)
-	}
-
-	if info.Size() == 0 {
-		return nil, fmt.Errorf("table '%s' not found", tbl)
-	}
-
-	// Do the JSON decode in case the file is not empty. It will be empty only on the incdb first time run.
-	if err := json.NewDecoder(f).Decode(&d); err != nil {
-		return nil, fmt.Errorf("decode tablespace file as JSON: %w", err)
+	if err := readJsonFile(f, &d); err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
 	}
 
 	t, ok := d[tbl]
@@ -67,18 +80,8 @@ func save(tbl, key, value string) error {
 
 	d := map[string][]map[string]string{}
 
-	info, err := f.Stat()
-	if err != nil {
-		return fmt.Errorf("stat tablespace file: %w", err)
-	}
-
-	if info.Size() == 0 {
-		return fmt.Errorf("table '%s' not found", tbl)
-	}
-
-	// Do the JSON decode in case the file is not empty. It will be empty only on the incdb first time run.
-	if err := json.NewDecoder(f).Decode(&d); err != nil {
-		return fmt.Errorf("decode tablespace file as JSON: %w", err)
+	if err := readJsonFile(f, &d); err != nil {
+		return fmt.Errorf("read file: %w", err)
 	}
 
 	if _, ok := d[tbl]; !ok {
@@ -87,18 +90,8 @@ func save(tbl, key, value string) error {
 
 	d[tbl] = append(d[tbl], map[string]string{key: value})
 
-	// Drop the file content before write. Seek(0, 0) is needed to modify the IO offset.
-	if err := f.Truncate(0); err != nil {
-		return fmt.Errorf("clear tablespace file: %w", err)
-	}
-
-	if _, err := f.Seek(0, 0); err != nil {
-		return fmt.Errorf("change tablespace file IO offset: %w", err)
-	}
-
-	// Write the data back.
-	if err := json.NewEncoder(f).Encode(d); err != nil {
-		return fmt.Errorf("encode data into tablespace file: %w", err)
+	if err := updateJsonFile(f, &d); err != nil {
+		return fmt.Errorf("update tablespace file: %w", err)
 	}
 
 	f.Sync()
@@ -114,16 +107,8 @@ func createTable(tbl string) error {
 
 	d := map[string][]map[string]string{}
 
-	info, err := f.Stat()
-	if err != nil {
-		return fmt.Errorf("stat tablespace file: %w", err)
-	}
-
-	// Do the JSON decode in case the file is not empty. It will be empty only on the incdb first time run.
-	if info.Size() != 0 {
-		if err := json.NewDecoder(f).Decode(&d); err != nil {
-			return fmt.Errorf("decode tablespace file as JSON: %w", err)
-		}
+	if err := readJsonFile(f, &d); err != nil {
+		return fmt.Errorf("read file: %w", err)
 	}
 
 	if _, ok := d[tbl]; ok {
@@ -132,18 +117,8 @@ func createTable(tbl string) error {
 
 	d[tbl] = []map[string]string{}
 
-	// Drop the file content before write. Seek(0, 0) is needed to modify the IO offset.
-	if err := f.Truncate(0); err != nil {
-		return fmt.Errorf("clear tablespace file: %w", err)
-	}
-
-	if _, err := f.Seek(0, 0); err != nil {
-		return fmt.Errorf("change tablespace file IO offset: %w", err)
-	}
-
-	// Write the data back.
-	if err := json.NewEncoder(f).Encode(d); err != nil {
-		return fmt.Errorf("encode data into tablespace file: %w", err)
+	if err := updateJsonFile(f, &d); err != nil {
+		return fmt.Errorf("update tablespace file: %w", err)
 	}
 
 	f.Sync()
