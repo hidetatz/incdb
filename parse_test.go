@@ -88,14 +88,17 @@ func TestParse_Select(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		q, err := parse(tc.input)
-		if tc.wantErr != (err != nil) {
-			t.Fatalf("wantErr: %v, err: %v", tc.wantErr, err)
-		}
+		tc := tc
+		t.Run(tc.input, func(t *testing.T) {
+			q, err := parse(tc.input)
+			if tc.wantErr != (err != nil) {
+				t.Fatalf("wantErr: %v, err: %v", tc.wantErr, err)
+			}
 
-		if !reflect.DeepEqual(tc.wantStmt, q) {
-			t.Fatalf("want: %+v, got: %+v", tc.wantStmt, q)
-		}
+			if !reflect.DeepEqual(tc.wantStmt, q) {
+				t.Fatalf("want: %+v, got: %+v", tc.wantStmt, q)
+			}
+		})
 	}
 }
 
@@ -156,14 +159,17 @@ func TestParse_Insert(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		q, err := parse(tc.input)
-		if tc.wantErr != (err != nil) {
-			t.Fatalf("wantErr: %v, err: %v", tc.wantErr, err)
-		}
+		tc := tc
+		t.Run(tc.input, func(t *testing.T) {
+			q, err := parse(tc.input)
+			if tc.wantErr != (err != nil) {
+				t.Fatalf("wantErr: %v, err: %v", tc.wantErr, err)
+			}
 
-		if !reflect.DeepEqual(tc.wantStmt, q) {
-			t.Fatalf("want: %+v, got: %+v", tc.wantStmt, q)
-		}
+			if !reflect.DeepEqual(tc.wantStmt, q) {
+				t.Fatalf("want: %+v, got: %+v", tc.wantStmt, q)
+			}
+		})
 	}
 }
 
@@ -212,13 +218,16 @@ func TestParse_Create(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		q, err := parse(tc.input)
-		if tc.wantErr != (err != nil) {
-			t.Fatalf("wantErr: %v, err: %v", tc.wantErr, err)
-		}
+		tc := tc
+		t.Run(tc.input, func(t *testing.T) {
+			q, err := parse(tc.input)
+			if tc.wantErr != (err != nil) {
+				t.Fatalf("wantErr: %v, err: %v", tc.wantErr, err)
+			}
 
-		if !reflect.DeepEqual(tc.wantStmt, q) {
-			t.Fatalf("want: %+v, got: %+v", tc.wantStmt, q)
-		}
+			if !reflect.DeepEqual(tc.wantStmt, q) {
+				t.Fatalf("want: %+v, got: %+v", tc.wantStmt, q)
+			}
+		})
 	}
 }
