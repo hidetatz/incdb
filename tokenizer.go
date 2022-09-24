@@ -74,12 +74,17 @@ func tokenize(query string) *Token {
 		case '"':
 			i++
 			s := ""
+			terminated := false
 			for i < len(query) {
 				if query[i] == '"' { // TODO: must handle " in ""
+					terminated = true
 					break
 				}
 				s += string(query[i])
 				i++
+			}
+			if !terminated {
+				panic("double quote not terminated")
 			}
 			i++
 			cur.Next = &Token{Type: TkStr, Val: s}
@@ -87,12 +92,17 @@ func tokenize(query string) *Token {
 		case '\'':
 			i++
 			s := ""
+			terminated := false
 			for i < len(query) {
 				if query[i] == '\'' { // TODO: must handle ' in ''
+					terminated = true
 					break
 				}
 				s += string(query[i])
 				i++
+			}
+			if !terminated {
+				panic("single quote not terminated")
 			}
 			i++
 			cur.Next = &Token{Type: TkStr, Val: s}
