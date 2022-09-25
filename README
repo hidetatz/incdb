@@ -26,3 +26,8 @@ Steps:
 * Can do MVCC transaction
 * Can create single column index
 * Can use single column index
+
+Usage:
+
+$ make
+$ ./usage.sh
