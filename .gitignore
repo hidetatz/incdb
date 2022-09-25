@@ -1,3 +1,4 @@
-incdb
-incdb_test
-data
+/incdb
+/incdbd
+/incdb_test
+/data

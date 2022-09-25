@@ -217,6 +217,19 @@ func TestE2E(t *testing.T) {
 
 	exec.Command("rm", "-f", "./data/test.incdb.data").Run()
 	exec.Command("rm", "-f", "./data/test.incdb.catalog").Run()
+	incdbd := exec.Command("./incdbd")
+	if err := incdbd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		process, err := os.FindProcess(incdbd.Process.Pid)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err = process.Kill(); err != nil {
+			t.Fatal(err)
+		}
+	})
 
 	for _, tc := range tests {
 		out, err := exec.Command("./incdb", tc.query).CombinedOutput()
