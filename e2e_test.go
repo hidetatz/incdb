@@ -1,109 +1,290 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 	"testing"
 )
 
 func TestE2E(t *testing.T) {
 	tests := []struct {
-		input        string
-		wantErr      bool
-		expectedOut  string
-		expectedData string
+		query string
+		// used in insert/create
+		msg string
+		// used in select
+		rHdr []string
+		rDat [][]string
+		// file verification
+		data map[string][]map[string]string
+		cat  *Catalog
 	}{
-		{input: "r test", expectedOut: "run query: execute select statement: compute select result: table 'test' not found", wantErr: true},
-		{input: "create table test (key string, value string)", expectedData: `{"test":[]}`},
-		{input: "insert into test", expectedOut: "run query: gramatically invalid: parse statement: values is expected but got EOF", wantErr: true},
-		{input: `insert into test (key, value) values ("1", "a")`, expectedData: `{"test":[{"key":"1","value":"a"}]}`},
-		{input: `insert into test (key, value) values ("2", "b")`, expectedData: `{"test":[{"key":"1","value":"a"},{"key":"2","value":"b"}]}`},
-		{input: `insert into test (key, value) values ("3", "c")`, expectedData: `{"test":[{"key":"1","value":"a"},{"key":"2","value":"b"},{"key":"3","value":"c"}]}`},
-		{input: "r test", expectedOut: `[1 a][2 b][3 c]`},
-		{input: "r test '1'", expectedOut: `[1 a]`},
-		{input: "r test '99'", expectedOut: ``},
-		{input: "r test limit 2", expectedOut: `[1 a][2 b]`},
-		{input: "r test limit 100", expectedOut: `[1 a][2 b][3 c]`},
-		{input: "r test limit", expectedOut: "run query: gramatically invalid: parse statement: integer value is expected but got EOF", wantErr: true},
-		{input: "r test limit a", expectedOut: "run query: gramatically invalid: parse statement: integer value is expected but got symbol", wantErr: true},
-		{input: "r test offset 1", expectedOut: `[2 b][3 c]`},
-		{input: "r test offset 3", expectedOut: ""},
-		{input: "r test offset", expectedOut: "run query: gramatically invalid: parse statement: integer value is expected but got EOF", wantErr: true},
-		{input: "r test offset abc", expectedOut: "run query: gramatically invalid: parse statement: integer value is expected but got symbol", wantErr: true},
-		{input: "r test limit 1 offset 1", expectedOut: "[2 b]"},
-		{input: "r test limit 5 offset 1", expectedOut: "[2 b][3 c]"},
-		{input: "r test offset 1 limit 5", expectedOut: "[2 b][3 c]"},
-		{input: "r test order by asc", expectedOut: "[1 a][2 b][3 c]"},
-		{input: "r test order by desc", expectedOut: "[3 c][2 b][1 a]"},
-		{input: "r test order by desc limit 1", expectedOut: "[3 c]"},
-		{input: "r test order by desc limit 1 offset 2", expectedOut: "[1 a]"},
+		// create table
 		{
-			input:        "create table test2 (key2 string, value2 string)",
-			expectedData: `{"test":[{"key":"1","value":"a"},{"key":"2","value":"b"},{"key":"3","value":"c"}],"test2":[]}`,
-		}, // flaky: the order of "test" and "test2" might be interchanged
-		{
-			input:        `insert into test2 (key2, value2) values ("1", "a")`,
-			expectedData: `{"test":[{"key":"1","value":"a"},{"key":"2","value":"b"},{"key":"3","value":"c"}],"test2":[{"key2":"1","value2":"a"}]}`,
+			query: "create table item (id string, name string)",
+			msg:   "table item created",
+			data:  map[string][]map[string]string{"item": {}},
+			cat: &Catalog{Tables: []*CtTable{
+				{
+					Name: "item",
+					Cols: []*CtCol{
+						{Name: "id", Type: "string"},
+						{Name: "name", Type: "string"},
+					},
+				},
+			}},
 		},
 		{
-			input:        `insert into test2 (key2, value2) values ("2", "b")`,
-			expectedData: `{"test":[{"key":"1","value":"a"},{"key":"2","value":"b"},{"key":"3","value":"c"}],"test2":[{"key2":"1","value2":"a"},{"key2":"2","value2":"b"}]}`,
+			query: "create table user (id string, name string, city string)",
+			msg:   "table user created",
+			data:  map[string][]map[string]string{"item": {}, "user": {}},
+			cat: &Catalog{Tables: []*CtTable{
+				{
+					Name: "item",
+					Cols: []*CtCol{
+						{Name: "id", Type: "string"},
+						{Name: "name", Type: "string"},
+					},
+				},
+				{
+					Name: "user",
+					Cols: []*CtCol{
+						{Name: "id", Type: "string"},
+						{Name: "name", Type: "string"},
+						{Name: "city", Type: "string"},
+					},
+				},
+			}},
+		},
+
+		// insert
+		{
+			query: `insert into item (id, name) values ("1", "laptop")`,
+			msg:   "inserted",
+			data: map[string][]map[string]string{"user": {}, "item": {
+				{"id": "1", "name": "laptop"},
+			}},
 		},
 		{
-			input:        `insert into test2 (key2, value2) values ("3", "c")`,
-			expectedData: `{"test":[{"key":"1","value":"a"},{"key":"2","value":"b"},{"key":"3","value":"c"}],"test2":[{"key2":"1","value2":"a"},{"key2":"2","value2":"b"},{"key2":"3","value2":"c"}]}`,
+			query: `insert into item (id, name) values ("2", "iPhone")`,
+			msg:   "inserted",
+			data: map[string][]map[string]string{"user": {}, "item": {
+				{"id": "1", "name": "laptop"},
+				{"id": "2", "name": "iPhone"},
+			}},
 		},
 		{
-			input:        `insert into test2 (key2) values ("4")`,
-			expectedData: `{"test":[{"key":"1","value":"a"},{"key":"2","value":"b"},{"key":"3","value":"c"}],"test2":[{"key2":"1","value2":"a"},{"key2":"2","value2":"b"},{"key2":"3","value2":"c"},{"key2":"4"}]}`,
+			query: `insert into item values ("3", "radio")`,
+			msg:   "inserted",
+			data: map[string][]map[string]string{"user": {}, "item": {
+				{"id": "1", "name": "laptop"},
+				{"id": "2", "name": "iPhone"},
+				{"id": "3", "name": "radio"},
+			}},
 		},
 		{
-			input:        `insert into test2 values ("5", "e")`,
-			expectedData: `{"test":[{"key":"1","value":"a"},{"key":"2","value":"b"},{"key":"3","value":"c"}],"test2":[{"key2":"1","value2":"a"},{"key2":"2","value2":"b"},{"key2":"3","value2":"c"},{"key2":"4"},{"key2":"5","value2":"e"}]}`,
+			query: `insert into item (id) values ("4")`,
+			msg:   "inserted",
+			data: map[string][]map[string]string{"user": {}, "item": {
+				{"id": "1", "name": "laptop"},
+				{"id": "2", "name": "iPhone"},
+				{"id": "3", "name": "radio"},
+				{"id": "4"},
+			}},
 		},
-		{input: "r test2", expectedOut: `[1 a][2 b][3 c][4 ][5 e]`},
+
+		// select
+		{
+			query: "r item",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"1", "laptop"},
+				{"2", "iPhone"},
+				{"3", "radio"},
+				{"4", ""},
+			},
+		},
+		{
+			query: "r item '1'",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"1", "laptop"},
+			},
+		},
+		{
+			query: "r item '99'",
+			msg:   "no results",
+		},
+		{
+			query: "r item limit 2",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"1", "laptop"},
+				{"2", "iPhone"},
+			},
+		},
+		{
+			query: "r item limit 100",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"1", "laptop"},
+				{"2", "iPhone"},
+				{"3", "radio"},
+				{"4", ""},
+			},
+		},
+		{
+			query: "r item offset 1",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"2", "iPhone"},
+				{"3", "radio"},
+				{"4", ""},
+			},
+		},
+		{
+			query: "r item offset 4",
+			msg:   "no results",
+		},
+		{
+			query: "r item limit 1 offset 1",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"2", "iPhone"},
+			},
+		},
+		{
+			query: "r item limit 3 offset 1",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"2", "iPhone"},
+				{"3", "radio"},
+				{"4", ""},
+			},
+		},
+		{
+			query: "r item offset 1 limit 3",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"2", "iPhone"},
+				{"3", "radio"},
+				{"4", ""},
+			},
+		},
+		{
+			query: "r item order by asc",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"1", "laptop"},
+				{"2", "iPhone"},
+				{"3", "radio"},
+				{"4", ""},
+			},
+		},
+		{
+			query: "r item order by desc",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"4", ""},
+				{"3", "radio"},
+				{"2", "iPhone"},
+				{"1", "laptop"},
+			},
+		},
+		{
+			query: "r item order by desc limit 2",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"4", ""},
+				{"3", "radio"},
+			},
+		},
+		{
+			query: "r item order by desc limit 2 offset 1",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"3", "radio"},
+				{"2", "iPhone"},
+			},
+		},
 	}
 
 	// prepare test
 	os.Setenv("INCDB_TEST", "1")
-	t.Cleanup(func() {
-		os.Unsetenv("INCDB_TEST")
-	})
+	t.Cleanup(func() { os.Unsetenv("INCDB_TEST") })
 
-	o, err := exec.Command("rm", "-f", "./data/test.incdb.data").CombinedOutput()
-	if err != nil {
-		t.Fatalf("rm data: %v", string(o))
-	}
+	exec.Command("rm", "-f", "./data/test.incdb.data").Run()
+	exec.Command("rm", "-f", "./data/test.incdb.catalog").Run()
 
-	o, err = exec.Command("rm", "-f", "./data/test.incdb.catalog").CombinedOutput()
-	if err != nil {
-		t.Fatalf("rm data: %v", string(o))
-	}
-
-	// do check. Not like an ordinary table driven test, each test runs sequentially on the same tablespace file.
 	for _, tc := range tests {
-		out, err := exec.Command("./incdb", tc.input).CombinedOutput()
-		if tc.wantErr != (err != nil) {
-			t.Fatalf("running command '%v' fail: %v, out: %v", tc.input, err, string(out))
+		out, err := exec.Command("./incdb", tc.query).CombinedOutput()
+		if err != nil {
+			t.Fatalf("[%s] err: out: %s", tc.query, string(out))
 		}
 
-		if tc.expectedOut != "" {
-			if o := strings.TrimSuffix(string(out), "\n"); tc.expectedOut != o {
-				t.Fatalf("out: expected: '%s', got: '%s' (input: %s)", tc.expectedOut, o, tc.input)
+		// verify output
+		if tc.msg != "" {
+			// check message output
+			if o := strings.TrimSuffix(string(out), "\n"); tc.msg != o {
+				t.Fatalf("[%s] out: expected: '%s', got: '%s'", tc.query, tc.msg, o)
+			}
+		} else {
+			// check query result
+			type Output struct {
+				Hdr  []string
+				Vals [][]string
+			}
+
+			var o Output
+			if err := json.Unmarshal(out, &o); err != nil {
+				t.Fatalf("[%s] unmarshal output into json: %v", tc.query, err)
+			}
+
+			if !reflect.DeepEqual(tc.rHdr, o.Hdr) {
+				t.Fatalf("[%s] out/header: expected: '%s', got: '%s'", tc.query, tc.rHdr, o.Hdr)
+			}
+
+			if !reflect.DeepEqual(tc.rDat, o.Vals) {
+				t.Fatalf("[%s] out/data: expected: '%s', got: '%s'", tc.query, tc.rDat, o.Vals)
 			}
 		}
 
-		if tc.expectedData != "" {
+		// verify data file
+		if tc.data != nil {
 			d, err := os.ReadFile("./data/test.incdb.data")
 			if err != nil {
-				t.Fatalf("read test data file: %v", err)
+				t.Fatalf("[%s] read test data file: %v", tc.query, err)
+			}
+			d = d[:len(d)-1] // trim new line
+
+			e, err := json.Marshal(&tc.data)
+			if err != nil {
+				t.Fatalf("[%s] marshal expected data into json: %v", tc.query, err)
 			}
 
-			if dt := strings.TrimSuffix(string(d), "\n"); tc.expectedData != dt {
-				t.Fatalf("data: expected: '%s', got: '%s' (input: %s)", tc.expectedData, dt, tc.input)
+			if !reflect.DeepEqual(d, e) {
+				t.Fatalf("[%s] data: expected: '%s', got: '%s'", tc.query, string(e), string(d))
 			}
 		}
 
+		// verify catalog file
+		if tc.cat != nil {
+			c, err := os.ReadFile("./data/test.incdb.catalog")
+			if err != nil {
+				t.Fatalf("[%s] read test catalog file: %v", tc.query, err)
+			}
+			c = c[:len(c)-1] // trim new line
+
+			e, err := json.Marshal(&tc.cat)
+			if err != nil {
+				t.Fatalf("[%s] marshal expected catalog into json: %v", tc.query, err)
+			}
+
+			if !reflect.DeepEqual(c, e) {
+				t.Fatalf("[%s] catalog: expected: '%s', got: '%s'", tc.query, string(e), string(c))
+			}
+		}
 	}
 }

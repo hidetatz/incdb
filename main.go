@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -44,11 +45,40 @@ func run(query string) error {
 			return fmt.Errorf("execute select statement: %w", err)
 		}
 
-		for _, r := range results {
-			fmt.Fprintf(os.Stdout, "%v", r.Vals)
+		if len(results) == 0 {
+			fmt.Fprintf(os.Stdout, "no results\n")
+			return nil
 		}
 
-		fmt.Fprintf(os.Stdout, "\n")
+		if os.Getenv("INCDB_TEST") == "1" {
+			// in test, output will be structured for testability
+			type Output struct {
+				Hdr  []string
+				Vals [][]string
+			}
+			o := Output{Hdr: results[0].Cols}
+
+			vals := [][]string{}
+			for _, r := range results {
+				vals = append(vals, r.Vals)
+			}
+			o.Vals = vals
+			b, err := json.Marshal(&o)
+			if err != nil {
+				return fmt.Errorf("print marshal result in test: %w", err)
+			}
+			fmt.Fprintf(os.Stdout, "%s\n", string(b))
+
+			return nil
+		}
+
+		tw := NewTableWriter(os.Stdout)
+		tw.SetHeader(results[0].Cols)
+		for _, r := range results {
+			tw.Append(r.Vals)
+		}
+
+		tw.Render()
 	}
 
 	return nil
