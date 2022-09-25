@@ -32,13 +32,15 @@ func run(query string) error {
 			return fmt.Errorf("execute create statement: %w", err)
 		}
 
-		fmt.Fprintf(os.Stdout, "table %s created", stmt.Create.Table)
+		fmt.Fprintf(os.Stdout, "table %s created\n", stmt.Create.Table)
+
 	case stmt.Insert != nil:
 		if err := execInsert(stmt.Insert); err != nil {
 			return fmt.Errorf("execute insert statement: %w", err)
 		}
 
-		fmt.Fprintf(os.Stdout, "inserted")
+		fmt.Fprintf(os.Stdout, "inserted\n")
+
 	case stmt.Select != nil:
 		results, err := execSelect(stmt.Select)
 		if err != nil {
