@@ -101,23 +101,23 @@ func parseWhereClause() *Where {
 	return w
 }
 
-// order_clause = ("order" "by" ("asc" | "desc"))?
+// order_clause = ("order" "by" column_name ("asc" | "desc")?)?
 func parseOrderClause() *Order {
 	if _, ok := consume(TkOrder); !ok {
 		return nil
 	}
 
-	if _, ok := consume(TkBy); !ok {
-		panic("'by' must follow 'order'")
-	}
+	mustConsume(TkBy)
+	col := mustConsume(TkSymbol)
+	o := &Order{Column: col, Dir: "asc"} // default asc
 
 	if _, ok := consume(TkAsc); ok {
-		return &Order{Dir: "asc"}
+		return o
 	} else if _, ok := consume(TkDesc); ok {
-		return &Order{Dir: "desc"}
+		return &Order{Column: col, Dir: "desc"}
 	}
 
-	panic("invalid direction specified after 'order by'")
+	return o
 }
 
 // limit_clause = ("limit" num | "offset" num | "limit" num "offset" num | "offset" num "limit" num)?

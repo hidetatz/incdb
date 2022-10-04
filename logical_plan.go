@@ -26,7 +26,7 @@ func planSelect(slct *Select) *QueryPlan {
 	}
 
 	if odr != nil {
-		ops = append(ops, OpOrder(odr.Dir))
+		ops = append(ops, OpOrder(odr.Column, odr.Dir))
 	}
 
 	if lim != nil && ofs != nil {
@@ -76,7 +76,7 @@ func OpWhereNotEq(col, key string) func(rs []*Record) ([]*Record, error) {
 	}
 }
 
-func OpOrder(dir string) func(rs []*Record) ([]*Record, error) {
+func OpOrder(col, dir string) func(rs []*Record) ([]*Record, error) {
 	return func(rs []*Record) ([]*Record, error) {
 		if len(rs) == 0 {
 			return rs, nil
@@ -84,9 +84,9 @@ func OpOrder(dir string) func(rs []*Record) ([]*Record, error) {
 
 		sort.Slice(rs, func(i, j int) bool {
 			if dir == "asc" {
-				return rs[i].Key() < rs[j].Key()
+				return rs[i].Value(col) < rs[j].Value(col)
 			}
-			return rs[j].Key() < rs[i].Key()
+			return rs[j].Value(col) < rs[i].Value(col)
 		})
 		return rs, nil
 	}

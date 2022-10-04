@@ -6,17 +6,29 @@ type Record struct {
 	Vals  []string
 }
 
-func (r *Record) Key() string {
-	return r.Vals[0]
+func (r *Record) ColIndex(col string) int {
+	for i := range r.Cols {
+		if r.Cols[i] == col {
+			return i
+		}
+	}
+	return -1
+}
+
+func (r *Record) Value(col string) string {
+	index := r.ColIndex(col)
+	if index < 0 {
+		return ""
+	}
+
+	return r.Vals[index]
 }
 
 func (r *Record) Find(col, key string) bool {
-	i := 0
-	for j, rcol := range r.Cols {
-		if rcol == col {
-			i = j
-		}
+	index := r.ColIndex(col)
+	if index < 0 {
+		return false
 	}
 
-	return r.Vals[i] == key
+	return r.Vals[index] == key
 }

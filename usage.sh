@@ -14,13 +14,18 @@ kill_incdbd_if_exists
 ./incdbd &
 echo "waiting for incdbd gets up and running..." && sleep 1
 
-./incdb 'create table item (id string, name string)'
-./incdb 'insert into item (id, name) values ("1", "laptop")'
-./incdb 'insert into item (id, name) values ("2", "iPhone")'
-./incdb 'insert into item values ("3", "radio")'
-./incdb 'select * from item'
-./incdb 'select name from item'
-./incdb 'select * from item where id = "2"'
-./incdb 'select * from item order by desc limit 2 offset 1'
+./incdb 'create table person (id string, name string, lang string)'
+./incdb 'insert into person (id, name, lang) values ("1", "alice", "En")'
+./incdb 'insert into person (id, name, lang) values ("2", "bob", "Ja")'
+./incdb 'insert into person values ("3", "chris", "Ja")'
+./incdb 'insert into person values ("4", "donald", "En")'
+./incdb 'insert into person values ("5", "eddie", "Ch")'
+./incdb 'insert into person values ("6", "fred", "Ch")'
+./incdb 'select * from person'
+./incdb 'select name, lang from person'
+./incdb 'select * from person where id = "2"'
+./incdb 'select * from person where lang != "Ja"'
+./incdb 'select * from person order by name desc limit 5 offset 3'
+./incdb 'select * from person order by lang'
 
 kill_incdbd_if_exists

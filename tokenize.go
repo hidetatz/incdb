@@ -131,7 +131,7 @@ func tokenize(query string) *Token {
 
 		case '!':
 			i++
-			if query[i+1] == '=' {
+			if query[i] == '=' {
 				i++
 				cur.Next = &Token{Type: TkNotEqual}
 			} else {

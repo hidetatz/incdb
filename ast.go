@@ -20,7 +20,8 @@ type Where struct {
 }
 
 type Order struct {
-	Dir string // asc/desc
+	Column string
+	Dir    string // asc/desc
 }
 
 type Limit struct {
