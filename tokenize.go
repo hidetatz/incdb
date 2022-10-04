@@ -15,8 +15,10 @@ type Token struct {
 type TkType string
 
 const (
-	// Query
-	TkRead = TkType("r")
+	// Select
+	TkSelect = TkType("select")
+	TkFrom   = TkType("from")
+	TkWhere  = TkType("where")
 
 	TkLimit  = TkType("limit")
 	TkOffset = TkType("offset")
@@ -45,9 +47,13 @@ const (
 	TkInt = TkType("integer value")
 
 	// Symbols
-	TkLParen = TkType("(")
-	TkRParen = TkType(")")
-	TkComma  = TkType(",")
+	TkLParen      = TkType("(")
+	TkRParen      = TkType(")")
+	TkComma       = TkType(",")
+	TkEqual       = TkType("=")
+	TkNotEqual    = TkType("!=")
+	TkExclamation = TkType("!")
+	TkStar        = TkType("*")
 
 	TkEOF = TkType("EOF")
 )
@@ -119,6 +125,22 @@ func tokenize(query string) *Token {
 			i++
 			cur.Next = &Token{Type: TkComma}
 
+		case '=':
+			i++
+			cur.Next = &Token{Type: TkEqual}
+
+		case '!':
+			i++
+			if query[i+1] == '=' {
+				i++
+				cur.Next = &Token{Type: TkNotEqual}
+			} else {
+				cur.Next = &Token{Type: TkExclamation}
+			}
+		case '*':
+			i++
+			cur.Next = &Token{Type: TkStar}
+
 		default:
 			s := ""
 			for i < len(query) {
@@ -137,8 +159,12 @@ func tokenize(query string) *Token {
 			}
 
 			switch strings.ToLower(s) {
-			case "r":
-				cur.Next = &Token{Type: TkRead}
+			case "select":
+				cur.Next = &Token{Type: TkSelect}
+			case "from":
+				cur.Next = &Token{Type: TkFrom}
+			case "where":
+				cur.Next = &Token{Type: TkWhere}
 			case "limit":
 				cur.Next = &Token{Type: TkLimit}
 			case "offset":

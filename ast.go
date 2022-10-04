@@ -9,14 +9,14 @@ type QueryStmt struct {
 /*
  * Select
  */
-
-// This should have "Left" field when table schema is supported
 type Binary struct {
-	Value string
+	Column string
+	Value  string
 }
 
 type Where struct {
-	Equal *Binary
+	Equal    *Binary
+	NotEqual *Binary
 }
 
 type Order struct {
@@ -32,11 +32,12 @@ type Offset struct {
 }
 
 type Select struct {
-	Table  string
-	Where  *Where
-	Order  *Order
-	Limit  *Limit
-	Offset *Offset
+	Columns []string
+	Table   string
+	Where   *Where
+	Order   *Order
+	Limit   *Limit
+	Offset  *Offset
 }
 
 /*

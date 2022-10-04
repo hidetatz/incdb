@@ -19,8 +19,8 @@ func parse(query string) (queryStmt *QueryStmt, err error) {
 
 	tk = tokenize(query)
 
-	if _, ok := consume(TkRead); ok {
-		return parseRead(), nil
+	if _, ok := consume(TkSelect); ok {
+		return parseSelect(), nil
 	}
 
 	if _, ok := consume(TkInsert); ok {
@@ -34,10 +34,32 @@ func parse(query string) (queryStmt *QueryStmt, err error) {
 	return nil, fmt.Errorf("unknown token type: %v", tk.Type)
 }
 
-// read = "r" table_name where_clause order_clause limit_clause
-func parseRead() *QueryStmt {
+// select = "select" ("*" | columns) "from" table_name where_clause order_clause limit_clause
+func parseSelect() *QueryStmt {
 	q := &QueryStmt{Select: &Select{}}
 
+	if _, ok := consume(TkStar); ok {
+		q.Select.Columns = []string{"*"}
+	} else {
+		i := 1
+		cols := []string{}
+		for {
+			if i > 100 {
+				panic("number of columns must be less than 100")
+			}
+
+			s := mustConsume(TkSymbol)
+			cols = append(cols, s)
+
+			if _, ok := consume(TkComma); !ok {
+				break
+			}
+			i++
+		}
+		q.Select.Columns = cols
+	}
+
+	mustConsume(TkFrom)
 	q.Select.Table = parseTableNameClause()
 	q.Select.Where = parseWhereClause()
 	q.Select.Order = parseOrderClause()
@@ -51,13 +73,32 @@ func parseTableNameClause() string {
 	return mustConsume(TkSymbol)
 }
 
-// where_clause = str?
+// where_clause = "where" column_name ("=" | "!=") str
 func parseWhereClause() *Where {
-	if s, ok := consume(TkStr); ok {
-		return &Where{Equal: &Binary{s}}
+	if _, ok := consume(TkWhere); !ok {
+		return nil
 	}
 
-	return nil
+	w := &Where{}
+	col := mustConsume(TkSymbol)
+
+	eq := true
+	if _, ok := consume(TkEqual); ok {
+		w.Equal = &Binary{Column: col}
+	} else if _, ok := consume(TkNotEqual); ok {
+		w.NotEqual = &Binary{Column: col}
+		eq = false
+	} else {
+		panic("= or != must be spceified in where clause")
+	}
+
+	if eq {
+		w.Equal.Value = mustConsume(TkStr)
+	} else {
+		w.NotEqual.Value = mustConsume(TkStr)
+	}
+
+	return w
 }
 
 // order_clause = ("order" "by" ("asc" | "desc"))?
