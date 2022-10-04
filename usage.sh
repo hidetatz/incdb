@@ -11,7 +11,7 @@ make clean
 make
 
 kill_incdbd_if_exists
-./incdbd &
+INCDB_TEST=1 ./incdbd &
 echo "waiting for incdbd gets up and running..." && sleep 1
 
 ./incdb 'create table person (id string, name string, lang string)'
