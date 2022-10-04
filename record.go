@@ -7,9 +7,16 @@ type Record struct {
 }
 
 func (r *Record) Key() string {
-	return r.Vals[0] // assuming first column is key
+	return r.Vals[0]
 }
 
-func (r *Record) Find(key string) bool {
-	return r.Key() == key // assuming first column is key
+func (r *Record) Find(col, key string) bool {
+	i := 0
+	for j, rcol := range r.Cols {
+		if rcol == col {
+			i = j
+		}
+	}
+
+	return r.Vals[i] == key
 }
