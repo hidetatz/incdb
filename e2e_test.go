@@ -97,7 +97,7 @@ func TestE2E(t *testing.T) {
 
 		// select
 		{
-			query: "r item",
+			query: "select * from item",
 			rHdr:  []string{"id", "name"},
 			rDat: [][]string{
 				{"1", "laptop"},
@@ -107,18 +107,18 @@ func TestE2E(t *testing.T) {
 			},
 		},
 		{
-			query: "r item '1'",
+			query: "select * from item where id = '1'",
 			rHdr:  []string{"id", "name"},
 			rDat: [][]string{
 				{"1", "laptop"},
 			},
 		},
 		{
-			query: "r item '99'",
+			query: "select * from item where id = '99'",
 			msg:   "no results",
 		},
 		{
-			query: "r item limit 2",
+			query: "select * from item limit 2",
 			rHdr:  []string{"id", "name"},
 			rDat: [][]string{
 				{"1", "laptop"},
@@ -126,7 +126,7 @@ func TestE2E(t *testing.T) {
 			},
 		},
 		{
-			query: "r item limit 100",
+			query: "select * from item limit 100",
 			rHdr:  []string{"id", "name"},
 			rDat: [][]string{
 				{"1", "laptop"},
@@ -136,7 +136,7 @@ func TestE2E(t *testing.T) {
 			},
 		},
 		{
-			query: "r item offset 1",
+			query: "select * from item offset 1",
 			rHdr:  []string{"id", "name"},
 			rDat: [][]string{
 				{"2", "iPhone"},
@@ -145,27 +145,18 @@ func TestE2E(t *testing.T) {
 			},
 		},
 		{
-			query: "r item offset 4",
+			query: "select * from item offset 4",
 			msg:   "no results",
 		},
 		{
-			query: "r item limit 1 offset 1",
+			query: "select * from item limit 1 offset 1",
 			rHdr:  []string{"id", "name"},
 			rDat: [][]string{
 				{"2", "iPhone"},
 			},
 		},
 		{
-			query: "r item limit 3 offset 1",
-			rHdr:  []string{"id", "name"},
-			rDat: [][]string{
-				{"2", "iPhone"},
-				{"3", "radio"},
-				{"4", ""},
-			},
-		},
-		{
-			query: "r item offset 1 limit 3",
+			query: "select * from item limit 3 offset 1",
 			rHdr:  []string{"id", "name"},
 			rDat: [][]string{
 				{"2", "iPhone"},
@@ -174,7 +165,16 @@ func TestE2E(t *testing.T) {
 			},
 		},
 		{
-			query: "r item order by asc",
+			query: "select * from item offset 1 limit 3",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"2", "iPhone"},
+				{"3", "radio"},
+				{"4", ""},
+			},
+		},
+		{
+			query: "select * from item order by id asc",
 			rHdr:  []string{"id", "name"},
 			rDat: [][]string{
 				{"1", "laptop"},
@@ -184,7 +184,7 @@ func TestE2E(t *testing.T) {
 			},
 		},
 		{
-			query: "r item order by desc",
+			query: "select * from item order by id desc",
 			rHdr:  []string{"id", "name"},
 			rDat: [][]string{
 				{"4", ""},
@@ -194,7 +194,7 @@ func TestE2E(t *testing.T) {
 			},
 		},
 		{
-			query: "r item order by desc limit 2",
+			query: "select * from item order by id desc limit 2",
 			rHdr:  []string{"id", "name"},
 			rDat: [][]string{
 				{"4", ""},
@@ -202,7 +202,7 @@ func TestE2E(t *testing.T) {
 			},
 		},
 		{
-			query: "r item order by desc limit 2 offset 1",
+			query: "select * from item order by id desc limit 2 offset 1",
 			rHdr:  []string{"id", "name"},
 			rDat: [][]string{
 				{"3", "radio"},
