@@ -43,6 +43,8 @@ func runQuery(query string) (*Result, error) {
 		return nil, fmt.Errorf("gramatically invalid: %w", err)
 	}
 
+	Debug("statement: ", stmt)
+
 	switch {
 	case stmt.Create != nil:
 		if err := execCreate(stmt.Create); err != nil {

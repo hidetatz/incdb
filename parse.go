@@ -18,6 +18,7 @@ func parse(query string) (queryStmt *QueryStmt, err error) {
 	}()
 
 	tk = tokenize(query)
+	Debug("tokens: ", tk)
 
 	if _, ok := consume(TkSelect); ok {
 		return parseSelect(), nil

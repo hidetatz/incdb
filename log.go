@@ -14,8 +14,9 @@ func init() {
 	}
 }
 
-func Debug(arg any) {
+func Debug(args ...any) {
 	if debug {
-		fmt.Fprintf(os.Stdout, "[DEBUG] %+v\n", arg)
+		fmt.Fprint(os.Stdout, "[DEBUG] ")
+		fmt.Fprintln(os.Stdout, args...)
 	}
 }

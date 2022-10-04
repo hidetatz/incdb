@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -10,6 +11,22 @@ type Token struct {
 	Next *Token
 	Val  string
 	IVal int // active only if Type is TkInt
+}
+
+func (tk *Token) String() string {
+	if tk == nil {
+		return "(end)"
+	}
+
+	if tk.Type == TkInt {
+		return fmt.Sprintf(`"%v" (%s) -- %s`, tk.IVal, string(tk.Type), tk.Next.String())
+	}
+
+	if tk.Type == TkSymbol || tk.Type == TkStr {
+		return fmt.Sprintf(`"%v" (%s) -- %s`, tk.Val, string(tk.Type), tk.Next.String())
+	}
+
+	return fmt.Sprintf("(%s) -- %s", string(tk.Type), tk.Next.String())
 }
 
 type TkType string

@@ -1,9 +1,28 @@
 package main
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 type QueryStmt struct {
 	Select *Select
 	Insert *Insert
 	Create *Create
+}
+
+func (qs *QueryStmt) String() string {
+	if qs == nil {
+		return "<nil>"
+	}
+
+	// Use json because pretty printing pointer struct is a hassle.
+	b, err := json.Marshal(qs)
+	if err != nil {
+		return fmt.Sprintf("failed to pretty print QueryStmt: %s", err)
+	}
+
+	return string(b)
 }
 
 /*
