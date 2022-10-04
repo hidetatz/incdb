@@ -107,6 +107,16 @@ func TestE2E(t *testing.T) {
 			},
 		},
 		{
+			query: "select id from item",
+			rHdr:  []string{"id"},
+			rDat: [][]string{
+				{"1"},
+				{"2"},
+				{"3"},
+				{"4"},
+			},
+		},
+		{
 			query: "select * from item where id = '1'",
 			rHdr:  []string{"id", "name"},
 			rDat: [][]string{
@@ -116,6 +126,22 @@ func TestE2E(t *testing.T) {
 		{
 			query: "select * from item where id = '99'",
 			msg:   "no results",
+		},
+		{
+			query: "select name from item where name != 'laptop'",
+			rHdr:  []string{"name"},
+			rDat: [][]string{
+				{"iPhone"},
+				{"radio"},
+				{""},
+			},
+		},
+		{
+			query: "select * from item where name = 'laptop'",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"1", "laptop"},
+			},
 		},
 		{
 			query: "select * from item limit 2",
@@ -194,6 +220,16 @@ func TestE2E(t *testing.T) {
 			},
 		},
 		{
+			query: "select * from item order by name",
+			rHdr:  []string{"id", "name"},
+			rDat: [][]string{
+				{"4", ""},
+				{"2", "iPhone"},
+				{"1", "laptop"},
+				{"3", "radio"},
+			},
+		},
+		{
 			query: "select * from item order by id desc limit 2",
 			rHdr:  []string{"id", "name"},
 			rDat: [][]string{
@@ -207,6 +243,14 @@ func TestE2E(t *testing.T) {
 			rDat: [][]string{
 				{"3", "radio"},
 				{"2", "iPhone"},
+			},
+		},
+		{
+			query: "select name from item where id != '3' order by id desc limit 2 offset 1",
+			rHdr:  []string{"name"},
+			rDat: [][]string{
+				{"iPhone"},
+				{"laptop"},
 			},
 		},
 	}
