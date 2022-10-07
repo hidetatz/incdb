@@ -12,10 +12,10 @@ incdbd: $(DSRCS)
 data:
 	mkdir -p data
 
-test: incdb
+test: all
 	go test ./...
 
-testv: incdb
+testv: all
 	go test -v ./...
 
 clean:

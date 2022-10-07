@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestE2E(t *testing.T) {
@@ -274,6 +275,8 @@ func TestE2E(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+
+	time.Sleep(time.Second)
 
 	for _, tc := range tests {
 		out, err := exec.Command("./incdb", tc.query).CombinedOutput()
