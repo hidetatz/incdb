@@ -80,7 +80,7 @@ func runQuery() error {
 		return nil
 	}
 
-	tw := NewTableWriter(os.Stdout)
+	tw := &TableWriter{}
 	tw.SetHeader(result.Hdr)
 	for _, val := range result.Vals {
 		tw.Append(val)

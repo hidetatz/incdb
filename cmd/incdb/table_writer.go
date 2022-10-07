@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 )
 
 type TableWriter struct {
-	w      io.Writer
+	Writer io.Writer
 	rows   [][]string
 	header []string
 	maxes  []int
@@ -18,12 +19,6 @@ const (
 	Row    = "-"
 	Column = "|"
 )
-
-func NewTableWriter(w io.Writer) *TableWriter {
-	return &TableWriter{
-		w: w,
-	}
-}
 
 func (w *TableWriter) SetHeader(hdr []string) {
 	w.maxes = make([]int, len(hdr))
@@ -43,6 +38,9 @@ func (w *TableWriter) Append(row []string) {
 }
 
 func (w *TableWriter) Render() {
+	if w.Writer == nil {
+		w.Writer = os.Stdout // default
+	}
 	w.printLine()
 	w.print(w.header)
 	w.printLine()
@@ -53,20 +51,20 @@ func (w *TableWriter) Render() {
 }
 
 func (w *TableWriter) printLine() {
-	fmt.Fprintf(w.w, "+")
+	fmt.Fprintf(w.Writer, "+")
 	for _, max := range w.maxes {
-		fmt.Fprintf(w.w, "%s", strings.Repeat("-", max))
-		fmt.Fprintf(w.w, "%s", "+")
+		fmt.Fprintf(w.Writer, "%s", strings.Repeat("-", max))
+		fmt.Fprintf(w.Writer, "%s", "+")
 	}
-	fmt.Fprintf(w.w, "\n")
+	fmt.Fprintf(w.Writer, "\n")
 }
 
 func (w *TableWriter) print(row []string) {
-	fmt.Fprintf(w.w, "|")
+	fmt.Fprintf(w.Writer, "|")
 	for i, val := range row {
 		spacesCnt := w.maxes[i] - len(val) - 1
-		fmt.Fprintf(w.w, " %s%s", val, strings.Repeat(" ", spacesCnt))
-		fmt.Fprintf(w.w, "%s", "|")
+		fmt.Fprintf(w.Writer, " %s%s", val, strings.Repeat(" ", spacesCnt))
+		fmt.Fprintf(w.Writer, "%s", "|")
 	}
-	fmt.Fprintf(w.w, "\n")
+	fmt.Fprintf(w.Writer, "\n")
 }
