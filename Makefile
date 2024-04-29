@@ -1,5 +1,5 @@
-DSRCS=$(wildcard *.go)
-SRCS=$(wildcard cmd/incdb/main.go)
+DSRCS=$(wildcard *.go) go.mod
+SRCS=$(wildcard cmd/incdb/main.go) go.mod
 
 all: incdb incdbd data
 

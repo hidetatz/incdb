@@ -1,3 +1,3 @@
 module github.com/hidetatz/incdb
 
-go 1.18
+go 1.22
