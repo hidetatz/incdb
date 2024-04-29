@@ -19,6 +19,6 @@ testv: all
 	go test -v ./...
 
 clean:
-	rm -f incdb incdbd data/incdb.data data/incdb.catalog
+	rm -f incdb incdbd data/*
 
 .PHONY: test testv clean
